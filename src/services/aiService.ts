@@ -16,7 +16,10 @@ export class AIService {
         provider: AIProvider,
         apiKeys: Record<string, string>
     ): Promise<ArtRoadmap> {
-        const apiKey = apiKeys[provider];
+        // Extract the specific key for the requested provider
+        const apiKey = apiKeys[provider] || '';
+        if (!apiKey) console.warn(`No API key found for ${provider}, proceeding with potential falback/error.`);
+
         return await APIManager.generateRoadmap(provider, {
             image: imageData,
             medium,
@@ -30,7 +33,7 @@ export class AIService {
         provider: AIProvider,
         apiKeys: Record<string, string>
     ): Promise<string> {
-        const apiKey = apiKeys[provider];
+        const apiKey = apiKeys[provider] || '';
         return await APIManager.imagineImage(provider, prompt, apiKey);
     }
 }
