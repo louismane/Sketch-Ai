@@ -1,0 +1,7 @@
+{
+  "name": "Atelier Workbench – Computational Deconstruction Platform",
+  "description": "A secure, professional-grade workstation for high-fidelity neural image analysis and artistic deconstruction.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
