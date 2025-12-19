@@ -487,19 +487,31 @@ const App: React.FC = () => {
                     <div className="space-y-8 advanced-glass p-8 rounded-2xl border border-white/20 shadow-inner">
                       <p className="text-[10px] text-zinc-700 font-medium uppercase tracking-widest -mt-2">Keys are stored locally in your browser's encrypted registry and never transmitted to our servers.</p>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {Object.values(AIProvider).map(provider => (
-                          <div key={provider} className="space-y-4 group">
-                            <div className="flex justify-between items-center ml-1">
-                              <label className="text-[9px] font-black text-zinc-500 group-hover:text-zinc-400 uppercase tracking-widest transition-colors">{provider} Master Key</label>
-                              {state.user?.apiKeys[provider] && (state.user.apiKeys[provider].length < 10) && <span className="text-[8px] bg-red-950/40 text-red-500 px-2 py-0.5 rounded font-black uppercase">Insecure / Short</span>}
+                        {Object.values(AIProvider).map(provider => {
+                          const validateKey = (p: string, k: string) => {
+                            if (!k) return null;
+                            if (p === AIProvider.OPENAI && !k.startsWith('sk-')) return "Invalid format (must start with 'sk-')";
+                            if (p === AIProvider.GEMINI && !k.startsWith('AIza')) return "Invalid format (must start with 'AIza')";
+                            if (p === AIProvider.HUGEFACE && !k.startsWith('hf_')) return "Invalid format (must start with 'hf_')";
+                            if (k.length < 8) return "Key too short";
+                            return null;
+                          };
+                          const error = validateKey(provider as string, state.user?.apiKeys[provider] || '');
+
+                          return (
+                            <div key={provider} className="space-y-4 group">
+                              <div className="flex justify-between items-center ml-1">
+                                <label className="text-[9px] font-black text-zinc-500 group-hover:text-zinc-400 uppercase tracking-widest transition-colors">{provider} Master Key</label>
+                                {error && <span className="text-[8px] bg-red-950/40 text-red-500 px-2 py-0.5 rounded font-black uppercase">{error}</span>}
+                              </div>
+                              <input type="password" placeholder={`Enter ${provider} Token`} value={state.user?.apiKeys[provider] || ''} onChange={(e) => {
+                                const newKeys = { ...state.user!.apiKeys, [provider as string]: e.target.value };
+                                AuthManager.updateUser(state.user!.userId, { apiKeys: newKeys });
+                                setState(p => ({ ...p, user: AuthManager.validate() }));
+                              }} className={`w-full input-premium px-4 py-3 rounded-xl text-zinc-200 font-mono text-xs tracking-tight bg-black/60 border focus:border-white transition-all shadow-2xl ${error ? 'border-red-900/50' : 'border-white/30'}`} />
                             </div>
-                            <input type="password" placeholder={`Enter ${provider} Token`} value={state.user?.apiKeys[provider] || ''} onChange={(e) => {
-                              const newKeys = { ...state.user!.apiKeys, [provider as string]: e.target.value };
-                              AuthManager.updateUser(state.user!.userId, { apiKeys: newKeys });
-                              setState(p => ({ ...p, user: AuthManager.validate() }));
-                            }} className={`w-full input-premium px-4 py-3 rounded-xl text-zinc-200 font-mono text-xs tracking-tight bg-black/60 border focus:border-white transition-all shadow-2xl ${state.user?.apiKeys[provider] && state.user.apiKeys[provider].length < 10 ? 'border-red-900/50' : 'border-white/30'}`} />
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                   </section>
@@ -604,7 +616,25 @@ const App: React.FC = () => {
                     <div className="absolute top-0 right-0 p-12 opacity-[0.02] rotate-12 scale-150 pointer-events-none"><PrismLogo /></div>
                     <h3 className="text-4xl md:text-6xl font-black mb-6 italic serif uppercase tracking-tighter opacity-70">Manifest</h3>
                     <div className="w-full relative group">
-                      <textarea placeholder="Describe a composition or paste a poem..." value={prompt} onChange={e => setPrompt(e.target.value)} className="w-full h-48 bg-black/40 border border-white/5 rounded-2xl p-6 text-lg focus:border-white outline-none transition-all resize-none shadow-8xl italic font-medium tracking-tight backdrop-blur-3xl relative z-10" />
+                      <textarea placeholder="Describe a composition or paste a poem... (e.g. 'cyberpunk city via Midjourney')" value={prompt} onChange={e => {
+                        const val = e.target.value;
+                        setPrompt(val);
+
+                        // Smart Provider Detection
+                        const lower = val.toLowerCase();
+                        let detected: AIProvider | null = null;
+                        if (lower.includes('midjourney') || lower.includes('mj ')) detected = AIProvider.MIDJOURNEY;
+                        else if (lower.includes('dalle') || lower.includes('openai') || lower.includes('gpt')) detected = AIProvider.OPENAI;
+                        else if (lower.includes('stable') || lower.includes('diffusion') || lower.includes('dreamstudio')) detected = AIProvider.STABILITY;
+                        else if (lower.includes('gemini') || lower.includes('bard')) detected = AIProvider.GEMINI;
+                        else if (lower.includes('runway')) detected = AIProvider.RUNWAY;
+                        else if (lower.includes('deepai')) detected = AIProvider.DEEPAI;
+                        else if (lower.includes('hugging')) detected = AIProvider.HUGEFACE;
+
+                        if (detected && detected !== state.preferredProvider) {
+                          setState(p => ({ ...p, preferredProvider: detected! }));
+                        }
+                      }} className="w-full h-48 bg-black/40 border border-white/5 rounded-2xl p-6 text-lg focus:border-white outline-none transition-all resize-none shadow-8xl italic font-medium tracking-tight backdrop-blur-3xl relative z-10" />
                       {prompt && (
                         <button onClick={handleSynthesis} disabled={state.isProcessing} className={`absolute bottom-4 right-4 z-20 bg-white text-black px-6 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] hover:scale-105 transition-all flex items-center gap-2 shadow-8xl ${!state.isProcessing ? 'animate-[pulseGlowGold_2s_infinite]' : ''}`}>
                           {state.isProcessing ? 'Wait...' : 'Manifest Now'} <ArrowLeftIcon className="rotate-180" />
