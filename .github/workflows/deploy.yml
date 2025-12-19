@@ -23,6 +23,7 @@ jobs:
         run: npm run build
         
       - name: Create Deployment Environment
+        id: deployment
         uses: bobheadxi/deployments@v1
         if: always()
         with:
