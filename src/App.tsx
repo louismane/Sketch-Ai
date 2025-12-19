@@ -544,38 +544,36 @@ const App: React.FC = () => {
 
                           return (
                             <div key={provider} className="space-y-4 group">
-                              return (
-                              <div key={provider} className="space-y-4 group">
-                                <div className="flex justify-between items-center ml-1">
-                                  <label className="text-[9px] font-black text-zinc-500 group-hover:text-zinc-400 uppercase tracking-widest transition-colors">{provider} Master Key</label>
-                                  {error && <span className="text-[8px] bg-red-950/40 text-red-500 px-2 py-0.5 rounded font-black uppercase">{error}</span>}
-                                </div>
-                                <div className="flex gap-2">
-                                  <input type="password" placeholder={`Enter ${provider} Token`} value={state.user?.apiKeys[provider] || ''} onChange={(e) => {
-                                    const newKeys = { ...state.user!.apiKeys, [provider as string]: e.target.value };
-                                    AuthManager.updateUser(state.user!.userId, { apiKeys: newKeys });
-                                    setState(p => ({ ...p, user: AuthManager.validate() }));
-                                  }} className={`w-full input-premium px-4 py-3 rounded-xl text-zinc-200 font-mono text-xs tracking-tight bg-black/60 border focus:border-white transition-all shadow-2xl ${error ? 'border-red-900/50' : 'border-white/30'}`} />
-                                  <button onClick={async () => {
-                                    if (!state.user?.apiKeys[provider]) return alert("Enter key first.");
-                                    const btn = document.getElementById(`btn-${provider}`);
-                                    if (btn) btn.innerText = "Testing...";
-                                    try {
-                                      // Dry run test
-                                      await AIService.imagineImage("test connection", provider as any, state.user!.apiKeys);
-                                      if (btn) { btn.innerText = "Verified"; btn.style.color = "#4ade80"; }
-                                      setTimeout(() => { if (btn) { btn.innerText = "Test"; btn.style.color = ""; } }, 3000);
-                                    } catch (e) {
-                                      if (btn) { btn.innerText = "Failed"; btn.style.color = "#ef4444"; }
-                                      alert(`Connection failed: ${e}`);
-                                      setTimeout(() => { if (btn) { btn.innerText = "Test"; btn.style.color = ""; } }, 3000);
-                                    }
-                                  }} id={`btn-${provider}`} className="px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all">Test</button>
-                                </div>
+                              <div className="flex justify-between items-center ml-1">
+                                <label className="text-[9px] font-black text-zinc-500 group-hover:text-zinc-400 uppercase tracking-widest transition-colors">{provider} Master Key</label>
+                                {error && <span className="text-[8px] bg-red-950/40 text-red-500 px-2 py-0.5 rounded font-black uppercase">{error}</span>}
                               </div>
-                              );
-                        })}
+                              <div className="flex gap-2">
+                                <input type="password" placeholder={`Enter ${provider} Token`} value={state.user?.apiKeys[provider] || ''} onChange={(e) => {
+                                  const newKeys = { ...state.user!.apiKeys, [provider as string]: e.target.value };
+                                  AuthManager.updateUser(state.user!.userId, { apiKeys: newKeys });
+                                  setState(p => ({ ...p, user: AuthManager.validate() }));
+                                }} className={`w-full input-premium px-4 py-3 rounded-xl text-zinc-200 font-mono text-xs tracking-tight bg-black/60 border focus:border-white transition-all shadow-2xl ${error ? 'border-red-900/50' : 'border-white/30'}`} />
+                                <button onClick={async () => {
+                                  if (!state.user?.apiKeys[provider]) return alert("Enter key first.");
+                                  const btn = document.getElementById('btn-' + provider);
+                                  if (btn) btn.innerText = "Testing...";
+                                  try {
+                                    // Dry run test
+                                    await AIService.imagineImage("test connection", provider as any, state.user!.apiKeys);
+                                    if (btn) { btn.innerText = "Verified"; btn.style.color = "#4ade80"; }
+                                    setTimeout(() => { if (btn) { btn.innerText = "Test"; btn.style.color = ""; } }, 3000);
+                                  } catch (e) {
+                                    if (btn) { btn.innerText = "Failed"; btn.style.color = "#ef4444"; }
+                                    alert("Connection failed: " + e);
+                                    setTimeout(() => { if (btn) { btn.innerText = "Test"; btn.style.color = ""; } }, 3000);
+                                  }
+                                }} id={'btn-' + provider} className="px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all">Test</button>
+                              </div>
                             </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   </section>
                 ) : (
