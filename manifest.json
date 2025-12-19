@@ -1,0 +1,22 @@
+{
+  "name": "SketchAI Professional Atelier",
+  "short_name": "SketchAI",
+  "description": "Convert photos into sketch references with step-by-step guides.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#ffffff",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://img.icons8.com/color/512/pencil-tip.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://img.icons8.com/color/512/pencil-tip.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
