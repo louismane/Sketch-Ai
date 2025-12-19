@@ -25,32 +25,48 @@ export default async function handler(req: Request) {
 
     switch (provider) {
       case 'Gemini':
-        return await handleGemini(apiKey, type, payload);
+        return await safeHandle(() => handleGemini(apiKey, type, payload), provider);
       case 'OpenAI':
-        return await handleOpenAI(apiKey, type, payload);
+        return await safeHandle(() => handleOpenAI(apiKey, type, payload), provider);
       case 'Stability AI':
       case 'DreamStudio':
-        return await handleStability(apiKey, type, payload);
+        return await safeHandle(() => handleStability(apiKey, type, payload), provider);
       case 'Hugging Face':
-        return await handleHuggingFace(apiKey, type, payload);
+        return await safeHandle(() => handleHuggingFace(apiKey, type, payload), provider);
       case 'DeepAI':
-        return await handleDeepAI(apiKey, type, payload);
+        return await safeHandle(() => handleDeepAI(apiKey, type, payload), provider);
       case 'NanoBanana':
-        return await handleNanoBanana(apiKey, type, payload);
+        return await safeHandle(() => handleNanoBanana(apiKey, type, payload), provider);
       case 'Artbreeder':
-        return await handleArtbreeder(apiKey, type, payload);
+        return await safeHandle(() => handleArtbreeder(apiKey, type, payload), provider);
       case 'Midjourney':
-        return await handleMidjourney(apiKey, type, payload);
+        return await safeHandle(() => handleMidjourney(apiKey, type, payload), provider);
       case 'RunwayML':
-        return await handleRunway(apiKey, type, payload);
+        return await safeHandle(() => handleRunway(apiKey, type, payload), provider);
       default:
-        return await handleGeneric(provider, apiKey, type, payload);
+        return await safeHandle(() => handleGeneric(provider, apiKey, type, payload), provider);
     }
   } catch (error: any) {
-    console.error("Proxy Error:", error);
-    return new Response(JSON.stringify({ error: error.message || 'Internal Orchestration Failure' }), {
+    console.error("Proxy Fatal Error:", error);
+    return new Response(JSON.stringify({ error: `Atelier Protocol Interference: ${error.message || 'Quantum instability detected.'}` }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
+    });
+  }
+}
+
+async function safeHandle(fn: () => Promise<Response>, provider: string) {
+  try {
+    return await fn();
+  } catch (error: any) {
+    console.warn(`${provider} Orchestration Interference:`, error);
+    return new Response(JSON.stringify({
+      error: `Interference detected in ${provider} sub-link.`,
+      details: error.message,
+      status: 'interference'
+    }), {
+      status: 502,
+      headers: { 'Content-Type': 'application/json' }
     });
   }
 }

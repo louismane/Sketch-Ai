@@ -321,25 +321,30 @@ const App: React.FC = () => {
   };
 
   const renderNav = () => (
-    <nav className="h-16 md:h-20 fixed top-0 w-full z-50 advanced-glass border-b border-white/5 flex items-center justify-between px-4 md:px-8 lg:px-16">
-      <div className="flex items-center gap-4 md:gap-8">
-        <div onClick={() => navigateTo('studio')} className="flex items-center gap-2 md:gap-4 cursor-pointer group">
+    <nav className="fixed top-0 left-0 right-0 z-[100] advanced-glass border-b border-white/5 px-8 py-5 flex items-center justify-between">
+      <div className="flex items-center gap-6 group cursor-pointer" onClick={() => navigateTo(state.user ? 'studio' : 'landing')}>
+        <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center transition-all group-hover:rotate-12 group-hover:scale-110 shadow-5xl">
           <PrismLogo />
-          <span className="font-black text-xl md:text-2xl lg:text-3xl tracking-tighter uppercase select-none bg-gradient-to-r from-white via-white/70 to-zinc-500 bg-clip-text text-transparent group-hover:tracking-widest transition-all duration-700">SketchAI</span>
         </div>
-        {state.user && (
-          <div className="hidden lg:flex gap-6 text-xs font-black uppercase tracking-wider text-zinc-600">
-            <button onClick={() => navigateTo('studio')} className="hover:text-white transition-all">Atelier</button>
-            <button onClick={() => navigateTo('studio')} className="hover:text-white transition-all">Library</button>
-            <div className={`flex items-center gap-2 px-4 py-1.5 rounded-full border backdrop-blur-3xl shadow-2xl transition-all ${state.user.dailyCount >= DAILY_LIMIT ? 'bg-red-950/30 border-red-500/20' : state.user.dailyCount >= DAILY_LIMIT - 2 ? 'bg-yellow-950/20 border-yellow-500/20' : 'bg-white/5 border-white/5'}`}>
-              <span className="text-zinc-500 text-xs">Studios:</span>
-              <span className={`font-bold text-sm ${state.user.dailyCount >= DAILY_LIMIT ? 'text-red-400' : state.user.dailyCount >= DAILY_LIMIT - 2 ? 'text-yellow-400' : 'text-zinc-100'}`}>
-                {state.user.dailyCount}/{DAILY_LIMIT}
-              </span>
-            </div>
-          </div>
-        )}
+        <div className="flex flex-col">
+          <h1 className="text-xl font-black uppercase tracking-tighter leading-none">SketchAI <span className="text-zinc-600">Pro</span></h1>
+          <p className="text-[8px] font-black tracking-[0.4em] text-zinc-500 uppercase mt-1.5 opacity-60">Apex v10.0 Precision Suite</p>
+        </div>
       </div>
+
+      {state.user && (
+        <div className="hidden lg:flex gap-6 text-xs font-black uppercase tracking-wider text-zinc-600">
+          <button onClick={() => navigateTo('studio')} className="hover:text-white transition-all">Atelier</button>
+          <button onClick={() => navigateTo('studio')} className="hover:text-white transition-all">Library</button>
+          <div className={`flex items-center gap-2 px-4 py-1.5 rounded-full border backdrop-blur-3xl shadow-2xl transition-all ${state.user.dailyCount >= DAILY_LIMIT ? 'bg-red-950/30 border-red-500/20' : state.user.dailyCount >= DAILY_LIMIT - 2 ? 'bg-yellow-950/20 border-yellow-500/20' : 'bg-white/5 border-white/5'}`}>
+            <span className="text-zinc-500 text-xs">Studios:</span>
+            <span className={`font-bold text-sm ${state.user.dailyCount >= DAILY_LIMIT ? 'text-red-400' : state.user.dailyCount >= DAILY_LIMIT - 2 ? 'text-yellow-400' : 'text-zinc-100'}`}>
+              {state.user.dailyCount}/{DAILY_LIMIT}
+            </span>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center gap-4 md:gap-8">
         {state.user && (
           <div className="flex gap-4 md:gap-8 mr-4 md:mr-8 border-r border-white/5 pr-4 md:pr-8">
@@ -601,7 +606,7 @@ const App: React.FC = () => {
                     <div className="w-full relative group">
                       <textarea placeholder="Describe a composition or paste a poem..." value={prompt} onChange={e => setPrompt(e.target.value)} className="w-full h-48 bg-black/40 border border-white/5 rounded-2xl p-6 text-lg focus:border-white outline-none transition-all resize-none shadow-8xl italic font-medium tracking-tight backdrop-blur-3xl relative z-10" />
                       {prompt && (
-                        <button onClick={handleSynthesis} disabled={state.isProcessing} className="absolute bottom-4 right-4 z-20 bg-white text-black px-6 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] hover:scale-105 transition-all flex items-center gap-2 shadow-8xl">
+                        <button onClick={handleSynthesis} disabled={state.isProcessing} className={`absolute bottom-4 right-4 z-20 bg-white text-black px-6 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] hover:scale-105 transition-all flex items-center gap-2 shadow-8xl ${!state.isProcessing ? 'animate-[pulseGlowGold_2s_infinite]' : ''}`}>
                           {state.isProcessing ? 'Wait...' : 'Manifest Now'} <ArrowLeftIcon className="rotate-180" />
                         </button>
                       )}
@@ -680,6 +685,10 @@ const App: React.FC = () => {
               <div className="lg:col-span-8 space-y-8">
                 <div className="aspect-square advanced-glass rounded-[4rem] flex items-center justify-center p-12 shadow-7xl border-t-4 border-white/10 relative overflow-hidden">
                   <div className="absolute inset-0 bg-white/[0.02] animate-pulse"></div>
+                  <div className="absolute top-8 left-8 flex items-center gap-2 opacity-40">
+                    <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(234,179,8,0.6)]"></div>
+                    <span className="text-[8px] font-black uppercase tracking-[0.3em] text-white">Apex Engine Active</span>
+                  </div>
                   <div className="w-full h-full border border-white/5 rounded-3xl bg-black/40 flex items-center justify-center text-zinc-900 font-black uppercase tracking-[2em] text-center select-none italic opacity-5">{step.visualType}</div>
                 </div>
                 <div className="flex justify-between items-center px-8 relative"><div className="absolute h-0.5 bg-white/5 left-12 right-12 top-1/2 -translate-y-1/2"></div>{state.activeRoadmap.steps.map((_, i) => <div key={i} onClick={() => setState(p => ({ ...p, currentStepIndex: i }))} className={`w-10 h-10 border-2 rounded-xl flex items-center justify-center cursor-pointer transition-all z-10 ${i === state.currentStepIndex ? 'bg-white border-white text-black scale-125 shadow-7xl' : 'bg-black border-white/10 text-zinc-700 hover:border-white/40'}`}><ScribbleIcon /></div>)}</div>
