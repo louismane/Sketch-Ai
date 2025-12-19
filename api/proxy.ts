@@ -59,6 +59,8 @@ export default async function handler(req: Request) {
         return await safeHandle(() => handleMidjourney(apiKey, type, payload), provider);
       case 'RunwayML':
         return await safeHandle(() => handleRunway(apiKey, type, payload), provider);
+      case 'Replicate':
+        return await safeHandle(() => handleReplicate(apiKey, type, payload), provider);
       default:
         return await safeHandle(() => handleGeneric(provider, apiKey, type, payload), provider);
     }

@@ -7,7 +7,7 @@ export default defineConfig(({ mode }) => {
   return {
 
     plugins: [react()],
-    base: '/Sketch-Ai/',
+    base: './',
     define: {
       'process.env.API_KEY': JSON.stringify(env.API_KEY || process.env.API_KEY),
       'process.env.RESEND_API_KEY': JSON.stringify(env.RESEND_API_KEY || process.env.RESEND_API_KEY),
