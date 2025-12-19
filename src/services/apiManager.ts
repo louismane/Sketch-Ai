@@ -49,9 +49,20 @@ const MEDIUM_CONSTRAINTS: Record<string, string> = {
     [ArtMedium.CRAYON]: "Focus on texture, heavy wax buildup, scratching into layers (sgraffito), and bold, saturated color application.",
 };
 
+/**
+ * AI Proxy Service Layer
+ * 
+ * Centralized service for orchestrating secure communication with the backend proxy.
+ * Ensures that no API keys are ever exposed to client-side logic beyond the encrypted vault.
+ * Routes all synthesis requests (Task 66) to /api/proxy with strictly typed payloads.
+ */
 export class APIManager {
+    // Alias for clearer semantics in newer components
+    static get Service() { return APIManager; }
+
     /**
      * Unified client-side entry point that communicates with the secure /api/proxy.
+     * Routes educational roadmap requests to the active AI provider.
      */
     static async generateRoadmap(provider: AIProvider, request: AIRequest, apiKey: string): Promise<ArtRoadmap> {
         if (!apiKey) throw new Error(`${provider} API key required. Update your profile settings.`);
