@@ -20,6 +20,7 @@ const MEDIUM_CONSTRAINTS: Record<string, string> = {
     [ArtMedium.ALCOHOL_MARKER]: "Focus on blending with alcohol-based markers, streak-free applications, and using a colorless blender.",
     [ArtMedium.OIL_PAINT]: "Focus on 'fat over lean' principles, impasto, glazing, and slow drying times. Mention linseed oil and turpentine.",
     [ArtMedium.DIGITAL_PAINTING]: "Focus on layers, opacity settings, specialized brush engine dynamics, and non-destructive editing.",
+    [ArtMedium.DIGITAL_SKETCH]: "Focus on quick, iterative strokes, pressure-sensitive tablet dynamics, and rough conceptual block-ins without fear of permanence.",
     [ArtMedium.ACRYLIC]: "Focus on rapid drying times, opacity, scumbling, and using mediums to extend workability.",
     [ArtMedium.GOUACHE]: "Focus on flat color blocks, layering light over dark, and its unique matte finish.",
     [ArtMedium.BALLPOINT_PEN]: "Focus on pressure sensitivity for smooth gradients and fine detail consistency.",

@@ -501,16 +501,24 @@ const App: React.FC = () => {
                 ) : (
                   <section className="space-y-6">
                     <h3 className="text-xs font-black uppercase tracking-wider text-zinc-800 ml-2">Access Security</h3>
-                    <div className="advanced-glass p-12 rounded-3xl border border-white/10 text-center space-y-4">
-                      <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <div className="advanced-glass p-12 rounded-3xl border border-white/10 text-center space-y-4 relative overflow-hidden group">
+                      {state.isProcessing && (
+                        <div className="absolute inset-0 z-10">
+                          <div className="absolute top-0 left-0 w-full h-1 bg-white/40 blur-sm animate-[scanBeam_2s_infinite]"></div>
+                          <div className="absolute inset-0 bg-white/[0.02] animate-pulse"></div>
+                        </div>
+                      )}
+                      <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-700">
                         <ScribbleIcon />
                       </div>
                       <h4 className="text-lg font-black uppercase tracking-tighter">Vault Encrypted</h4>
                       <p className="text-xs text-zinc-500 max-w-xs mx-auto">Initialize biometric guard to reveal your private orchestration secrets and API credentials.</p>
                       <button onClick={() => {
                         setState(p => ({ ...p, isProcessing: true }));
-                        setTimeout(() => setState(p => ({ ...p, isVaultUnlocked: true, isProcessing: false })), 1500);
-                      }} className="mt-6 px-10 py-4 bg-white text-black rounded-xl font-black uppercase tracking-widest text-xs hover:scale-105 transition-all shadow-4xl">Initialize Scan</button>
+                        setTimeout(() => setState(p => ({ ...p, isVaultUnlocked: true, isProcessing: false })), 2000);
+                      }} disabled={state.isProcessing} className="mt-6 px-10 py-4 bg-white text-black rounded-xl font-black uppercase tracking-widest text-xs hover:scale-105 transition-all shadow-4xl disabled:opacity-50">
+                        {state.isProcessing ? 'Synchronizing Biometrics...' : 'Initialize Identity Scan'}
+                      </button>
                     </div>
                   </section>
                 )}
@@ -587,9 +595,17 @@ const App: React.FC = () => {
                     }} />
                   </div>
                 ) : (
-                  <div className="h-[500px] flex flex-col justify-center items-center text-center p-8 md:p-12 border-2 border-white/5 rounded-3xl bg-black/60 shadow-inner relative group/man">
+                  <div className="h-[500px] flex flex-col justify-center items-center text-center p-8 md:p-12 border-2 border-white/5 rounded-3xl bg-black/60 shadow-inner relative group/man overflow-hidden">
+                    <div className="absolute top-0 right-0 p-12 opacity-[0.02] rotate-12 scale-150 pointer-events-none"><PrismLogo /></div>
                     <h3 className="text-4xl md:text-6xl font-black mb-6 italic serif uppercase tracking-tighter opacity-70">Manifest</h3>
-                    <textarea placeholder="Describe a composition or paste a poem..." value={prompt} onChange={e => setPrompt(e.target.value)} className="w-full h-48 bg-black/40 border border-white/5 rounded-2xl p-6 text-lg focus:border-white outline-none transition-all resize-none shadow-8xl italic font-medium tracking-tight backdrop-blur-3xl relative z-10" />
+                    <div className="w-full relative group">
+                      <textarea placeholder="Describe a composition or paste a poem..." value={prompt} onChange={e => setPrompt(e.target.value)} className="w-full h-48 bg-black/40 border border-white/5 rounded-2xl p-6 text-lg focus:border-white outline-none transition-all resize-none shadow-8xl italic font-medium tracking-tight backdrop-blur-3xl relative z-10" />
+                      {prompt && (
+                        <button onClick={handleSynthesis} disabled={state.isProcessing} className="absolute bottom-4 right-4 z-20 bg-white text-black px-6 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] hover:scale-105 transition-all flex items-center gap-2 shadow-8xl">
+                          {state.isProcessing ? 'Wait...' : 'Manifest Now'} <ArrowLeftIcon className="rotate-180" />
+                        </button>
+                      )}
+                    </div>
                     <div className="flex flex-wrap justify-center gap-2 mt-6 relative z-10">
                       {["Anatomical study of a raven", "Old man in charcoal", "Watercolor sunrise over Kyoto", "Cyberpunk noir alleyway", "Mechanical heart schematic", "Deep sea bioluminescence", "Victorian street in rain", "Geometric fox portrait"].map(t => (
                         <button key={t} onClick={() => setPrompt(t)} className="px-4 py-2 rounded-full border border-white/5 bg-white/5 text-[10px] font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all">+{t}</button>

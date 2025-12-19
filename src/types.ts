@@ -183,21 +183,3 @@ export interface AppState {
   history: ArtRoadmap[];
   isVaultUnlocked?: boolean;
 }
-
-export interface UserProfile {
-  id: string;
-  firstName: string;
-  lastName: string;
-  username: string;
-  email: string;
-  passwordHash: string;
-  profilePic?: string;
-  dob: string;
-  securityQuestion: string;
-  securityAnswer: string;
-  dailyCount: number;
-  lastResetDate: string;
-  joinedAt: number;
-  apiKeys: Record<string, string>; // Multi-provider API keys
-  preferredProvider: AIProvider;
-}
