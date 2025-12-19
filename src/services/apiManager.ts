@@ -44,6 +44,8 @@ const MEDIUM_CONSTRAINTS: Record<string, string> = {
     [ArtMedium.ILLUSTRATION]: "Focus on narrative composition, focal points, and a polished, professional finish for commercial use.",
     [ArtMedium.REALISM]: "Focus on accurate proportions, photographic values, and meticulous surface texture rendering.",
     [ArtMedium.IMPRESSIONISM]: "Focus on 'en plein air' energy, visible brushstrokes, and capturing the changing effects of light and color.",
+    [ArtMedium.AIRBRUSH]: "Focus on smooth gradients, soft edges, masking/stenciling techniques, and building up translucent layers of pigment.",
+    [ArtMedium.CRAYON]: "Focus on texture, heavy wax buildup, scratching into layers (sgraffito), and bold, saturated color application.",
 };
 
 export class APIManager {
