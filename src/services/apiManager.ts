@@ -14,12 +14,17 @@ const MEDIUM_CONSTRAINTS: Record<string, string> = {
     [ArtMedium.CHARCOAL]: "Focus on subtractive drawing with kneaded erasers, vine vs compressed charcoal, and broad tonal masses.",
     [ArtMedium.WATERCOLOR]: "Focus on wet-on-wet vs wet-on-dry techniques, transparency, blooms, and preserving the white of the paper.",
     [ArtMedium.SOFT_PASTEL]: "Focus on scumbling, feathering, and the fragile nature of pigment layers. Use fixative tips.",
+    [ArtMedium.OIL_PASTEL]: "Focus on heavy application, sgraffito, and blending with solvents or fingers.",
     [ArtMedium.BLUE_INK]: "Focus on line weight, cross-hatching, and the permanence of marks. Mention ballpoint vs fountain pen techniques.",
     [ArtMedium.BLACK_INK]: "Focus on high contrast, stippling, and varying nib sizes for technical precision.",
     [ArtMedium.ALCOHOL_MARKER]: "Focus on blending with alcohol-based markers, streak-free applications, and using a colorless blender.",
     [ArtMedium.OIL_PAINT]: "Focus on 'fat over lean' principles, impasto, glazing, and slow drying times. Mention linseed oil and turpentine.",
     [ArtMedium.DIGITAL_PAINTING]: "Focus on layers, opacity settings, specialized brush engine dynamics, and non-destructive editing.",
-    [ArtMedium.ACRYLIC]: "Focus on rapid drying times, opacity, scumbling, and using mediums to extend workability."
+    [ArtMedium.ACRYLIC]: "Focus on rapid drying times, opacity, scumbling, and using mediums to extend workability.",
+    [ArtMedium.GOUACHE]: "Focus on flat color blocks, layering light over dark, and its unique matte finish.",
+    [ArtMedium.BALLPOINT_PEN]: "Focus on pressure sensitivity for smooth gradients and fine detail consistency.",
+    [ArtMedium.FOUNTAIN_PEN]: "Focus on ink flow, nib flexibility, and the expressive nature of varying line weights.",
+    [ArtMedium.TECHNICAL_PEN]: "Focus on uniform line weights, precise geometric rendering, and stippling for tonal depth.",
 };
 
 export class APIManager {
