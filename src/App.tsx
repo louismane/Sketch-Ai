@@ -516,14 +516,45 @@ const App: React.FC = () => {
                 )}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-800 ml-1">Identity Display Name</label>
-                    <input type="text" value={`${state.user.firstName} ${state.user.lastName}`} disabled className="w-full bg-black/20 border border-white/5 p-4 rounded-xl text-xs font-bold text-zinc-500 cursor-not-allowed uppercase" />
+                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-800 ml-1">First Name</label>
+                    <input type="text" value={state.user.firstName} onChange={e => {
+                      AuthManager.updateUser(state.user!.userId, { firstName: e.target.value });
+                      setState(p => ({ ...p, user: AuthManager.validate() }));
+                    }} className="w-full bg-black/60 border border-white/5 p-4 rounded-xl text-xs font-bold text-zinc-200 outline-none focus:border-white transition-all uppercase" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-800 ml-1">Last Name</label>
+                    <input type="text" value={state.user.lastName} onChange={e => {
+                      AuthManager.updateUser(state.user!.userId, { lastName: e.target.value });
+                      setState(p => ({ ...p, user: AuthManager.validate() }));
+                    }} className="w-full bg-black/60 border border-white/5 p-4 rounded-xl text-xs font-bold text-zinc-200 outline-none focus:border-white transition-all uppercase" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-zinc-800 ml-1">Username</label>
+                    <input type="text" value={state.user.username} onChange={e => {
+                      AuthManager.updateUser(state.user!.userId, { username: e.target.value });
+                      setState(p => ({ ...p, user: AuthManager.validate() }));
+                    }} className="w-full bg-black/60 border border-white/5 p-4 rounded-xl text-xs font-bold text-zinc-200 outline-none focus:border-white transition-all uppercase" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-zinc-800 ml-1">Registry Email</label>
                     <input type="text" value={state.user.email} disabled className="w-full bg-black/20 border border-white/5 p-4 rounded-xl text-xs font-bold text-zinc-500 cursor-not-allowed uppercase" />
                   </div>
                 </div>
+                {state.isVaultUnlocked && (
+                  <div className="pt-8 border-t border-white/5 space-y-6 fade-in">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-zinc-800 ml-1">Update Security Shield Key</label>
+                      <input type="password" placeholder="Enter New Security Key" onChange={e => {
+                        if (e.target.value.length > 5) {
+                          AuthManager.updateUser(state.user!.userId, { passwordHash: e.target.value });
+                          setState(p => ({ ...p, user: AuthManager.validate() }));
+                        }
+                      }} className="w-full input-premium px-6 py-4 rounded-xl text-zinc-200 font-mono text-xs tracking-tight bg-black/40 border border-white/10 focus:border-white transition-all" />
+                      <p className="text-[8px] text-zinc-600 font-bold uppercase tracking-widest mt-1">Updates immediately upon valid entry (min 6 chars).</p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
