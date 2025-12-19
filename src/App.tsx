@@ -560,7 +560,7 @@ const App: React.FC = () => {
                     <h3 className="text-4xl md:text-6xl font-black mb-6 italic serif uppercase tracking-tighter opacity-70">Manifest</h3>
                     <textarea placeholder="Describe a composition or paste a poem..." value={prompt} onChange={e => setPrompt(e.target.value)} className="w-full h-48 bg-black/40 border border-white/5 rounded-2xl p-6 text-lg focus:border-white outline-none transition-all resize-none shadow-8xl italic font-medium tracking-tight backdrop-blur-3xl relative z-10" />
                     <div className="flex flex-wrap justify-center gap-2 mt-6 relative z-10">
-                      {["Anatomical study of a raven", "Old man in charcoal", "Watercolor sunrise over Kyoto", "Cyberpunk noir alleyway"].map(t => (
+                      {["Anatomical study of a raven", "Old man in charcoal", "Watercolor sunrise over Kyoto", "Cyberpunk noir alleyway", "Mechanical heart schematic", "Deep sea bioluminescence", "Victorian street in rain", "Geometric fox portrait"].map(t => (
                         <button key={t} onClick={() => setPrompt(t)} className="px-4 py-2 rounded-full border border-white/5 bg-white/5 text-[10px] font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all">+{t}</button>
                       ))}
                     </div>
