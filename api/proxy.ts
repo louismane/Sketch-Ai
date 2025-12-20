@@ -205,7 +205,7 @@ async function handleStability(key: string, type: string, payload: any) {
 }
 
 /**
- * UPDATED: Hugging Face through router.huggingface.co
+ * UPDATED: Hugging Face through router.huggingface.co (model-specific path)
  */
 async function handleHuggingFace(key: string, type: string, payload: any) {
   const model =
@@ -213,21 +213,10 @@ async function handleHuggingFace(key: string, type: string, payload: any) {
       ? 'runwayml/stable-diffusion-v1-5'
       : 'mistralai/Mistral-7B-Instruct-v0.2';
 
-  // New HF Inference Providers router endpoint
-  const url = 'https://router.huggingface.co/hf-inference';
+  // Model-specific router endpoint
+  const url = `https://router.huggingface.co/models/${model}`;
 
-  const body =
-    type === 'image'
-      ? {
-          model,
-          inputs: payload.prompt,
-          task: 'text-to-image',
-        }
-      : {
-          model,
-          inputs: payload.prompt,
-          task: 'text-generation',
-        };
+  const isImage = type === 'image';
 
   const response = await fetch(url, {
     method: 'POST',
@@ -235,15 +224,19 @@ async function handleHuggingFace(key: string, type: string, payload: any) {
       Authorization: `Bearer ${key}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify(
+      isImage
+        ? { inputs: payload.prompt } // text-to-image style
+        : { inputs: payload.prompt } // text generation style
+    ),
   });
 
   if (!response.ok) {
     const errText = await response.text();
-    throw new Error(errText || `HF router error: ${response.status}`);
+    throw new Error(errText || `HF error: ${response.status}`);
   }
 
-  if (type === 'image') {
+  if (isImage) {
     const blob = await response.blob();
     const buffer = await blob.arrayBuffer();
     const base64 = btoa(
