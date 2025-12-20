@@ -395,19 +395,31 @@ const App: React.FC = () => {
   };
 
   const verifySystemIdentity = async () => {
-    if (!window.PublicKeyCredential) return true; // Fallback for non-biometric devices
+    // We use credentials.create with 'platform' attachment to force the specialized "Windows Hello" / "Touch ID" prompt.
+    // This strictly avoids the "Insert USB Key" dialog by demanding an internal authenticator.
+    if (!window.PublicKeyCredential) return true; // Fallback
     try {
-      await navigator.credentials.get({
+      await navigator.credentials.create({
         publicKey: {
           challenge: new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8]),
-          rpId: window.location.hostname,
-          timeout: 60000,
-          userVerification: "required"
+          rp: { name: "SketchAI Security" },
+          user: {
+            id: new Uint8Array([1, 2, 3, 4]),
+            name: "studio_admin",
+            displayName: "Studio Admin"
+          },
+          pubKeyCredParams: [{ alg: -7, type: "public-key" }, { alg: -257, type: "public-key" }],
+          authenticatorSelection: {
+            authenticatorAttachment: "platform", // Forces Native OS Prompt (not USB)
+            userVerification: "required",      // Forces PIN/Biometric
+            residentKey: "discouraged"
+          },
+          timeout: 60000
         }
       });
-      return true;
+      return true; // If they pass the PIN/Biometric screen, we trust them.
     } catch (e) {
-      console.warn("Identity check failed", e);
+      console.warn("Identity check failed/cancelled", e);
       return false;
     }
   };
