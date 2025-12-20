@@ -117,7 +117,7 @@ async function handleGemini(key: string, type: string, payload: any) {
   const model =
     type === 'roadmap'
       ? 'gemini-1.5-pro-latest'
-      : 'gemini-1.5-flash-latest';
+      : 'gemini-1.5-flash-001'; // <-- Use a valid model name here from listGeminiModels
 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
 
@@ -151,7 +151,7 @@ async function handleGemini(key: string, type: string, payload: any) {
   return json({ result: text });
 }
 
-// Helper to list Gemini models for debugging / validation
+// This function calls the Gemini ListModels API endpoint and returns available models
 async function listGeminiModels(key: string) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${key}`;
   const res = await fetch(url, {
