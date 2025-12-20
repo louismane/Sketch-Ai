@@ -1,7 +1,10 @@
 {
-  "name": "Atelier Workbench – Computational Deconstruction Platform",
-  "description": "A secure, professional-grade workstation for high-fidelity neural image analysis and artistic deconstruction.",
+  "name": "Atelier Workbench",
+  "short_name": "Atelier",
+  "description": "Your personal creative workspace for exploring and breaking down images with AI-powered tools. Capture moments with your camera and dive deep into artistic analysis.",
   "requestFramePermissions": [
     "camera"
-  ]
+  ],
+  "version": "1.0.0",
+  "author": "SketchAI Team"
 }
