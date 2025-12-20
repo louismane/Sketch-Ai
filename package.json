@@ -8,7 +8,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "deploy": "gh-pages -d dist"  // Optional: deploy the built app to GitHub Pages easily
+    "deploy": "gh-pages -d dist"  
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
