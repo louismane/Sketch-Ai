@@ -97,12 +97,13 @@ function json(body: any, status = 200) {
 /* -------------------------------------------------- */
 
 async function handleGemini(key: string, type: string, payload: any) {
+  // Use latest models supported by v1beta
   const model =
     type === 'roadmap'
       ? 'gemini-1.5-pro-latest'
       : 'gemini-1.5-flash-latest';
 
-  const url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${key}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
 
   const res = await fetch(url, {
     method: 'POST',
@@ -177,7 +178,8 @@ async function handleHuggingFace(key: string, type: string, payload: any) {
       ? 'stabilityai/stable-diffusion-xl-base-1.0'
       : 'mistralai/Mistral-7B-Instruct-v0.2';
 
-  const url = `https://api-inference.huggingface.co/models/${model}`;
+  // NEW: use router.huggingface.co with model-specific path
+  const url = `https://router.huggingface.co/models/${model}`;
 
   const res = await fetch(url, {
     method: 'POST',
@@ -196,7 +198,13 @@ async function handleHuggingFace(key: string, type: string, payload: any) {
   if (type === 'image') {
     const blob = await res.blob();
     const buffer = await blob.arrayBuffer();
-    const base64 = Buffer.from(buffer).toString('base64');
+    // Buffer is not available in edge runtime; use btoa + Uint8Array instead
+    const base64 = btoa(
+      new Uint8Array(buffer).reduce(
+        (data, byte) => data + String.fromCharCode(byte),
+        ''
+      )
+    );
 
     return json({ result: `data:image/png;base64,${base64}` });
   }
