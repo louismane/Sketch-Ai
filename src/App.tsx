@@ -189,6 +189,8 @@ const App: React.FC = () => {
   const [isComparing, setIsComparing] = useState(false);
   const [mode, setMode] = useState<'upload' | 'generate'>('upload');
   const [prompt, setPrompt] = useState('');
+  const [sessionInitialized, setSessionInitialized] = useState(false);
+  const [sessionFingerprint, setSessionFingerprint] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
 
   const navigateTo = (v: any, roadmap: ArtRoadmap | null = null) => {
@@ -299,7 +301,41 @@ const App: React.FC = () => {
     return () => window.removeEventListener('message', listener);
   }, []);
 
+  const computeFingerprint = useCallback(() => {
+    const uid = state.user?.userId || 'anon';
+    const provider = state.preferredProvider;
+    const key = state.user?.apiKeys?.[provider] || '';
+    const hash = btoa(unescape(encodeURIComponent(key))).slice(0, 24);
+    return `${uid}:${provider}:${hash}`;
+  }, [state.user, state.preferredProvider]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('sketchai_session_fp') || '';
+    setSessionFingerprint(saved);
+    if (saved && saved === computeFingerprint() && state.activeRoadmap) {
+      setSessionInitialized(true);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const current = computeFingerprint();
+    if (sessionFingerprint && sessionFingerprint !== current) {
+      setSessionInitialized(false);
+      localStorage.removeItem('sketchai_session_fp');
+      setSessionFingerprint('');
+    }
+  }, [computeFingerprint, sessionFingerprint]);
+
+  const resetSession = () => {
+    setSessionInitialized(false);
+    localStorage.removeItem('sketchai_session_fp');
+    setSessionFingerprint('');
+    setState(p => ({ ...p, activeRoadmap: null }));
+  };
+
   const handleSynthesis = async () => {
+    if (sessionInitialized) return;
     if (!state.user) return;
     const hasOwnKey = state.user.apiKeys[state.preferredProvider];
 
@@ -348,6 +384,10 @@ const App: React.FC = () => {
       localStorage.setItem('sketchai_pro_history_v1', JSON.stringify(history));
 
       setState(p => ({ ...p, history, activeRoadmap: guide, view: 'workspace', currentStepIndex: 0, isProcessing: false, user: AuthManager.validate() }));
+      const fp = computeFingerprint();
+      localStorage.setItem('sketchai_session_fp', fp);
+      setSessionFingerprint(fp);
+      setSessionInitialized(true);
     } catch (err: any) {
       console.error('Synthesis error:', err);
       setState(p => ({ ...p, error: err.message || "Failed to generate roadmap.", isProcessing: false }));
@@ -756,7 +796,11 @@ const App: React.FC = () => {
                     }} className="w-full bg-zinc-950 border border-white/5 rounded-xl px-6 py-4 font-black text-zinc-100 outline-none focus:border-white appearance-none shadow-7xl cursor-pointer text-base uppercase tracking-wider text-center">{Object.values(AIProvider).map(p => <option key={p} value={p}>{p}</option>)}</select>
                   </div>
                 </div>
-                <button onClick={handleSynthesis} disabled={state.isProcessing} className="w-full py-6 bg-white text-black font-black uppercase tracking-[0.6em] rounded-2xl hover:scale-105 active:scale-95 transition-all text-xl shadow-xl">{state.isProcessing ? 'Synthesizing...' : 'Initialize Session'}</button>
+                {!sessionInitialized ? (
+                  <button onClick={handleSynthesis} disabled={state.isProcessing} className="w-full py-6 bg-white text-black font-black uppercase tracking-[0.6em] rounded-2xl hover:scale-105 active:scale-95 transition-all text-xl shadow-xl">{state.isProcessing ? 'Synthesizing...' : 'Initialize Session'}</button>
+                ) : (
+                  <div className="w-full py-6 rounded-2xl text-center text-xs font-black uppercase tracking-[0.6em] bg-zinc-900 text-zinc-400 border border-white/10">Session Ready</div>
+                )}
               </div>
               <div className="xl:col-span-4 space-y-8">
                 <h3 className="text-xl font-black uppercase tracking-widest text-zinc-700 ml-4">Art Registry</h3>
