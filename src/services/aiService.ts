@@ -7,6 +7,10 @@ export interface AIServiceResponse {
 }
 
 export class AIService {
+  /**
+   * Generate a detailed art instruction roadmap for the user,
+   * based on skill level, medium, and input image data.
+   */
   static async generateRoadmap(
     userId: string,
     imageData: string,
@@ -16,19 +20,17 @@ export class AIService {
     apiKeys: Record<string, string>
   ): Promise<ArtRoadmap> {
     const apiKey = apiKeys[provider] || '';
-    
     if (!apiKey) {
-      throw new Error(`No API key found for ${provider}. Please add one in Settings.`);
+      throw new Error(`No API key found for provider "${provider}". Please add one in Settings.`);
     }
 
-    // Use /api/proxy for all providers
     const response = await fetch('/api/proxy', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        provider: provider,
+        provider,
         type: 'roadmap',
-        apiKey: apiKey,
+        apiKey,
         payload: {
           prompt: `Create a detailed art instruction roadmap for a ${skill} artist learning ${medium} from this image: ${imageData}`,
           image: imageData,
@@ -42,43 +44,44 @@ export class AIService {
     const data = await response.json();
 
     if (!response.ok || data.error) {
-      throw new Error(data.error || `${provider} roadmap generation failed`);
+      throw new Error(data.error ?? `${provider} roadmap generation failed`);
     }
 
-    // Parse response
+    // Try to parse roadmap JSON from response.result
     try {
       return JSON.parse(data.result);
-    } catch {
-      // Fallback if result isn't JSON
+    } catch (error) {
+      // If parsing fails, return a fallback empty roadmap with minimal info
       return {
         id: userId,
         medium,
         skillLevel: skill,
         steps: [],
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
       } as ArtRoadmap;
     }
   }
 
+  /**
+   * Generate an image based on the given prompt using specified AI provider.
+   */
   static async imagineImage(
     prompt: string,
     provider: AIProvider,
     apiKeys: Record<string, string>
   ): Promise<string> {
     const apiKey = apiKeys[provider] || '';
-    
     if (!apiKey) {
-      throw new Error(`No API key found for ${provider}. Please add one in Settings.`);
+      throw new Error(`No API key found for provider "${provider}". Please add one in Settings.`);
     }
 
-    // Use /api/proxy for all providers
     const response = await fetch('/api/proxy', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        provider: provider,
+        provider,
         type: 'image',
-        apiKey: apiKey,
+        apiKey,
         payload: { prompt }
       })
     });
@@ -86,7 +89,7 @@ export class AIService {
     const data = await response.json();
 
     if (!response.ok || data.error) {
-      throw new Error(data.error || `${provider} image generation failed`);
+      throw new Error(data.error ?? `${provider} image generation failed`);
     }
 
     return data.result;
