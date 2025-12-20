@@ -109,6 +109,20 @@ function json(body: any, status = 200) {
 }
 
 /* -------------------------------------------------- */
+/* Base64 helper function for Edge Runtime             */
+/* -------------------------------------------------- */
+
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  // Use Buffer to convert binary string to base64 (works in Node and Vercel Edge)
+  return Buffer.from(binary, 'binary').toString('base64');
+}
+
+/* -------------------------------------------------- */
 /* Providers                                           */
 /* -------------------------------------------------- */
 
@@ -238,12 +252,7 @@ async function handleHuggingFace(key: string, type: string, payload: any) {
   if (type === 'image') {
     const blob = await res.blob();
     const buffer = await blob.arrayBuffer();
-    const base64 = btoa(
-      new Uint8Array(buffer).reduce(
-        (data, byte) => data + String.fromCharCode(byte),
-        ''
-      )
-    );
+    const base64 = arrayBufferToBase64(buffer);
 
     return json({ result: `data:image/png;base64,${base64}` });
   }
