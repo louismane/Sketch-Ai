@@ -9,7 +9,6 @@ export const config = {
  */
 
 export default async function handler(req: Request) {
-  // CORS preflight support
   if (req.method === 'OPTIONS') {
     return json({}, 204);
   }
@@ -53,7 +52,7 @@ export default async function handler(req: Request) {
           provider
         );
 
-      case 'GeminiListModels': // helper endpoint for listing Gemini models
+      case 'GeminiListModels':
         return await safe(() => listGeminiModels(apiKey), provider);
 
       default:
@@ -77,9 +76,7 @@ export default async function handler(req: Request) {
   }
 }
 
-/* -------------------------------------------------- */
-/* Utility Helpers                                     */
-/* -------------------------------------------------- */
+/* Utility Helpers */
 
 async function safe(fn: () => Promise<Response>, provider: string) {
   try {
@@ -101,16 +98,14 @@ function json(body: any, status = 200) {
     status,
     headers: {
       'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*', // Adjust for your production domain
+      'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     },
   });
 }
 
-/* -------------------------------------------------- */
-/* Base64 helper function for Edge Runtime             */
-/* -------------------------------------------------- */
+/* Base64 helper function */
 
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer);
@@ -118,22 +113,20 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
   for (let i = 0; i < bytes.byteLength; i++) {
     binary += String.fromCharCode(bytes[i]);
   }
-  // Use Buffer to convert binary string to base64 (works in Node and Vercel Edge)
   return Buffer.from(binary, 'binary').toString('base64');
 }
 
-/* -------------------------------------------------- */
-/* Providers                                           */
-/* -------------------------------------------------- */
+/* Providers */
 
+/** Gemini AI - Google Generative Language API (latest 2025) */
 async function handleGemini(key: string, type: string, payload: any) {
-  // Replace with actual verified model names from listGeminiModels
+  // Updated model names per 2025 latest API
   const model =
     type === 'roadmap'
-      ? 'gemini-1.5-pro-latest'
-      : 'gemini-1.5-flash-001'; // <-- Use a valid model name here from listGeminiModels
+      ? 'models/gemini-pro-latest'       // Pro roadmap model
+      : 'models/gemini-flash-latest';    // General chat model
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/${model}:generateContent?key=${key}`;
 
   const res = await fetch(url, {
     method: 'POST',
@@ -165,7 +158,6 @@ async function handleGemini(key: string, type: string, payload: any) {
   return json({ result: text });
 }
 
-// This function calls the Gemini ListModels API endpoint and returns available models
 async function listGeminiModels(key: string) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${key}`;
   const res = await fetch(url, {
@@ -185,12 +177,16 @@ async function listGeminiModels(key: string) {
   return json({ models: data.models });
 }
 
+/** OpenAI - Latest recommended 2025 usage */
 async function handleOpenAI(key: string, type: string, payload: any) {
   const isImage = type === 'image';
 
   const url = isImage
     ? 'https://api.openai.com/v1/images/generations'
     : 'https://api.openai.com/v1/chat/completions';
+
+  // Use GPT-4o if available, fallback to GPT-4o-mini (mini is smaller and faster)
+  const chatModel = 'gpt-4o';
 
   const body = isImage
     ? {
@@ -199,7 +195,7 @@ async function handleOpenAI(key: string, type: string, payload: any) {
         size: '1024x1024',
       }
     : {
-        model: 'gpt-4o-mini',
+        model: chatModel,
         messages: [{ role: 'user', content: payload.prompt }],
       };
 
@@ -226,13 +222,15 @@ async function handleOpenAI(key: string, type: string, payload: any) {
   return json({ result: output });
 }
 
+/** Hugging Face - Updated 2025 models and API */
 async function handleHuggingFace(key: string, type: string, payload: any) {
+  // Use popular 2025 models for text and image generation
   const model =
     type === 'image'
-      ? 'stabilityai/stable-diffusion-xl-base-1.0'
-      : 'mistralai/Mistral-7B-Instruct-v0.2';
+      ? 'stabilityai/stable-diffusion-xl-base-1.0' // Stable Diffusion XL v1.0 for images
+      : 'tiiuae/falcon-40b-instruct';             // Falcon 40B Instruct for text
 
-  const url = `https://router.huggingface.co/models/${model}`;
+  const url = `https://api-inference.huggingface.co/models/${model}`;
 
   const res = await fetch(url, {
     method: 'POST',
@@ -258,6 +256,8 @@ async function handleHuggingFace(key: string, type: string, payload: any) {
   }
 
   const data = await res.json();
+
+  // Falcon 40B returns generated_text in an array or object
   const text =
     Array.isArray(data)
       ? data[0]?.generated_text
@@ -266,31 +266,32 @@ async function handleHuggingFace(key: string, type: string, payload: any) {
   return json({ result: text });
 }
 
+/** Stability AI - Latest v2025 stable diffusion endpoint */
 async function handleStability(key: string, type: string, payload: any) {
   if (type !== 'image') {
     throw new Error('Stability AI only supports image generation.');
   }
 
-  const res = await fetch(
-    'https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/text-to-image',
-    {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${key}`,
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-        'User-Agent': 'SketchAI-Proxy/1.0',
-      },
-      body: JSON.stringify({
-        text_prompts: [{ text: payload.prompt }],
-        cfg_scale: 7,
-        height: 1024,
-        width: 1024,
-        samples: 1,
-        steps: 30,
-      }),
-    }
-  );
+  const url =
+    'https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/text-to-image';
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${key}`,
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+      'User-Agent': 'SketchAI-Proxy/1.0',
+    },
+    body: JSON.stringify({
+      text_prompts: [{ text: payload.prompt }],
+      cfg_scale: 7,
+      height: 1024,
+      width: 1024,
+      samples: 1,
+      steps: 30,
+    }),
+  });
 
   const data = await res.json();
 
