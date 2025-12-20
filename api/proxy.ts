@@ -9,6 +9,11 @@ export const config = {
  */
 
 export default async function handler(req: Request) {
+  // CORS preflight support
+  if (req.method === 'OPTIONS') {
+    return json({}, 204);
+  }
+
   if (req.method !== 'POST') {
     return json(
       { error: 'Method Not Allowed' },
@@ -47,6 +52,9 @@ export default async function handler(req: Request) {
           () => handleStability(apiKey, type, payload),
           provider
         );
+
+      case 'GeminiListModels': // helper endpoint for listing Gemini models
+        return await safe(() => listGeminiModels(apiKey), provider);
 
       default:
         return json(
@@ -93,7 +101,7 @@ function json(body: any, status = 200) {
     status,
     headers: {
       'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*', // adjust for your domain in production
+      'Access-Control-Allow-Origin': '*', // Adjust for your production domain
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     },
@@ -105,7 +113,7 @@ function json(body: any, status = 200) {
 /* -------------------------------------------------- */
 
 async function handleGemini(key: string, type: string, payload: any) {
-  // Use latest models that work with v1beta generateContent
+  // Replace with actual verified model names from listGeminiModels
   const model =
     type === 'roadmap'
       ? 'gemini-1.5-pro-latest'
@@ -141,6 +149,26 @@ async function handleGemini(key: string, type: string, payload: any) {
       .join('') || '';
 
   return json({ result: text });
+}
+
+// Helper to list Gemini models for debugging / validation
+async function listGeminiModels(key: string) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${key}`;
+  const res = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      'User-Agent': 'SketchAI-Proxy/1.0',
+    },
+  });
+
+  if (!res.ok) {
+    const data = await res.json();
+    throw new Error(data?.error?.message || 'Failed to list Gemini models');
+  }
+
+  const data = await res.json();
+  return json({ models: data.models });
 }
 
 async function handleOpenAI(key: string, type: string, payload: any) {
