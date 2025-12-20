@@ -1,29 +1,29 @@
 {
   "compilerOptions": {
-    "target": "ES2022",
-    "experimentalDecorators": true,
-    "useDefineForClassFields": false,
-    "module": "ESNext",
+    "target": "ES2022",                          // Target modern JS runtime
+    "experimentalDecorators": true,             // Enable decorators if you use them
+    "useDefineForClassFields": false,           // Compatible with Babel, avoid issues with class fields
+    "module": "ESNext",                          // Use ES modules for bundling
     "lib": [
       "ES2022",
       "DOM",
       "DOM.Iterable"
-    ],
-    "skipLibCheck": true,
+    ],                                           // Standard libs for modern JS + browser APIs
+    "skipLibCheck": true,                        // Skip type checking for declaration files for faster builds
     "types": [
       "node"
-    ],
-    "moduleResolution": "bundler",
-    "isolatedModules": true,
-    "moduleDetection": "force",
-    "allowJs": true,
-    "jsx": "react-jsx",
+    ],                                           // Node.js typings available (for Vite environment, tooling, etc.)
+    "moduleResolution": "bundler",               // Recommended for bundlers like Vite
+    "isolatedModules": true,                      // Ensures each file is transpiled independently
+    "moduleDetection": "force",                   // Force module detection (good for mixed projects)
+    "allowJs": true,                              // Allow JS files alongside TS (good for incremental migration)
+    "jsx": "react-jsx",                           // Use new JSX transform from React 17+
     "paths": {
       "@/*": [
         "./src/*"
       ]
-    },
-    "allowImportingTsExtensions": true,
-    "noEmit": true
+    },                                            // Alias '@' to 'src' folder, matching vite.config alias
+    "allowImportingTsExtensions": true,           // Allow imports with extensions like '.ts', useful for some setups
+    "noEmit": true                                // Don't emit JS files, used when building only for type checking
   }
 }
