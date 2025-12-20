@@ -4,134 +4,136 @@ export const config = {
 
 /**
  * Atelier Apex Orchestration Proxy
- *
- * Securely routes synthesis requests to 12+ AI providers.
- * Handles authentication, CORS, and standardized error protocols.
- *
- * Supported Providers:
- * - OpenAI (GPT-4 / DALL-E)
- * - Gemini (1.5 Flash / Pro)
- * - Stability AI (SDXL)
- * - Hugging Face (Mistral / SD 1.5)
- * - DeepAI (Text2Img)
- * - Nanobanana (Gen-AI)
- * - Replicate (Edge-Aware)
- * - Midjourney/Runway/Artbreeder (Protocol-limited)
+ * Stable, multi-provider AI routing layer
+ * Compatible with Vercel Edge Runtime
  */
+
 export default async function handler(req: Request) {
   if (req.method !== 'POST') {
     return new Response('Method Not Allowed', { status: 405 });
   }
 
   try {
-    let { provider, apiKey, type, payload } = await req.json();
+    const { provider, apiKey, type, payload } = await req.json();
 
-    // Support environment variable defaults for a 'free tier'
-    const envKeyName = provider.toUpperCase().replace(/\s/g, '_') + '_API_KEY';
-    // @ts-ignore edge runtime env
-    const defaultKey = (process.env as any)[envKeyName];
-
-    if ((!apiKey || apiKey === 'DEFAULT') && defaultKey) {
-      apiKey = defaultKey;
-    }
-
-    if (!provider || !apiKey || !type || !payload) {
-      return new Response(
-        JSON.stringify({
-          error: `Missing ${provider || 'AI'} API key. Please update your Vault.`,
-        }),
-        { status: 400 }
+    if (!provider || !apiKey || !type || !payload?.prompt) {
+      return json(
+        {
+          error: 'Missing provider, API key, request type, or prompt.',
+          status: 'invalid_request',
+        },
+        400
       );
     }
 
     switch (provider) {
       case 'Gemini':
-        return await safeHandle(() => handleGemini(apiKey, type, payload), provider);
+        return await safe(() => handleGemini(apiKey, type, payload), provider);
+
       case 'OpenAI':
-        return await safeHandle(() => handleOpenAI(apiKey, type, payload), provider);
-      case 'Stability AI':
-      case 'DreamStudio':
-        return await safeHandle(() => handleStability(apiKey, type, payload), provider);
+        return await safe(() => handleOpenAI(apiKey, type, payload), provider);
+
       case 'Hugging Face':
-        return await safeHandle(() => handleHuggingFace(apiKey, type, payload), provider);
-      case 'DeepAI':
-        return await safeHandle(() => handleDeepAI(apiKey, type, payload), provider);
-      case 'NanoBanana':
-        return await safeHandle(() => handleNanoBanana(apiKey, type, payload), provider);
-      case 'Artbreeder':
-        return await safeHandle(() => handleArtbreeder(apiKey, type, payload), provider);
-      case 'Midjourney':
-        return await safeHandle(() => handleMidjourney(apiKey, type, payload), provider);
-      case 'RunwayML':
-        return await safeHandle(() => handleRunway(apiKey, type, payload), provider);
-      case 'Replicate':
-        return await safeHandle(() => handleReplicate(apiKey, type, payload), provider);
-      default:
-        return await safeHandle(
-          () => handleGeneric(provider, apiKey, type, payload),
+        return await safe(
+          () => handleHuggingFace(apiKey, type, payload),
           provider
         );
+
+      case 'Stability AI':
+        return await safe(
+          () => handleStability(apiKey, type, payload),
+          provider
+        );
+
+      default:
+        return json(
+          {
+            error: `${provider} is not yet supported.`,
+            status: 'unsupported',
+          },
+          501
+        );
     }
-  } catch (error: any) {
-    console.error('Proxy Fatal Error:', error);
-    return new Response(
-      JSON.stringify({
-        error: `Atelier Protocol Interference: ${
-          error.message || 'Quantum instability detected.'
-        }`,
-      }),
+  } catch (err: any) {
+    return json(
       {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      }
+        error: 'Proxy fatal error.',
+        details: err?.message || err,
+        status: 'fatal',
+      },
+      500
     );
   }
 }
 
-async function safeHandle(fn: () => Promise<Response>, provider: string) {
+/* -------------------------------------------------- */
+/* Utility Helpers                                     */
+/* -------------------------------------------------- */
+
+async function safe(fn: () => Promise<Response>, provider: string) {
   try {
     return await fn();
-  } catch (error: any) {
-    console.warn(`${provider} Orchestration Interference:`, error);
-    return new Response(
-      JSON.stringify({
-        error: `Interference detected in ${provider} sub-link.`,
-        details: error.message,
-        status: 'interference',
-      }),
+  } catch (err: any) {
+    return json(
       {
-        status: 502,
-        headers: { 'Content-Type': 'application/json' },
-      }
+        error: `Interference detected in ${provider}.`,
+        details: err?.message || err,
+        status: 'interference',
+      },
+      502
     );
   }
 }
 
-async function handleGemini(key: string, type: string, payload: any) {
-  const model = type === 'roadmap' ? 'gemini-1.5-pro' : 'gemini-1.5-flash';
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
+function json(body: any, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
 
-  const response = await fetch(url, {
+/* -------------------------------------------------- */
+/* Providers                                           */
+/* -------------------------------------------------- */
+
+async function handleGemini(key: string, type: string, payload: any) {
+  const model =
+    type === 'roadmap'
+      ? 'gemini-1.5-pro-latest'
+      : 'gemini-1.5-flash-latest';
+
+  const url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${key}`;
+
+  const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      contents: [{ parts: [{ text: payload.prompt }] }],
-      generationConfig:
-        type === 'roadmap' ? { responseMimeType: 'application/json' } : {},
+      contents: [
+        {
+          role: 'user',
+          parts: [{ text: payload.prompt }],
+        },
+      ],
     }),
   });
 
-  const result = await response.json();
-  if (result.error) throw new Error(result.error.message);
+  const data = await res.json();
 
-  const text = result.candidates?.[0]?.content?.parts?.[0]?.text || '';
-  return new Response(JSON.stringify({ result: text }), {
-    headers: { 'Content-Type': 'application/json' },
-  });
+  if (!res.ok) {
+    throw new Error(data?.error?.message || 'Gemini request failed');
+  }
+
+  const text =
+    data.candidates?.[0]?.content?.parts
+      ?.map((p: any) => p.text)
+      .join('') || '';
+
+  return json({ result: text });
 }
 
 async function handleOpenAI(key: string, type: string, payload: any) {
   const isImage = type === 'image';
+
   const url = isImage
     ? 'https://api.openai.com/v1/images/generations'
     : 'https://api.openai.com/v1/chat/completions';
@@ -141,15 +143,13 @@ async function handleOpenAI(key: string, type: string, payload: any) {
         prompt: payload.prompt,
         n: 1,
         size: '1024x1024',
-        response_format: 'b64_json',
       }
     : {
-        model: 'gpt-4-turbo-preview',
+        model: 'gpt-4o-mini',
         messages: [{ role: 'user', content: payload.prompt }],
-        response_format: type === 'roadmap' ? { type: 'json_object' } : undefined,
       };
 
-  const response = await fetch(url, {
+  const res = await fetch(url, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${key}`,
@@ -158,198 +158,89 @@ async function handleOpenAI(key: string, type: string, payload: any) {
     body: JSON.stringify(body),
   });
 
-  const result = await response.json();
-  if (result.error) throw new Error(result.error.message);
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data?.error?.message || 'OpenAI request failed');
+  }
 
   const output = isImage
-    ? `data:image/png;base64,${result.data?.[0]?.b64_json}`
-    : result.choices?.[0]?.message?.content;
+    ? data.data?.[0]?.url
+    : data.choices?.[0]?.message?.content;
 
-  return new Response(JSON.stringify({ result: output }), {
-    headers: { 'Content-Type': 'application/json' },
-  });
+  return json({ result: output });
 }
 
-async function handleStability(key: string, type: string, payload: any) {
-  // Stability handles images excellently, but roadmaps need a text model (we fallback to core/generic if forced but for now pretend success)
-  if (type === 'roadmap')
-    return await handleGeneric('Stability AI Text', key, type, payload);
-
-  const url =
-    'https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/text-to-image';
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${key}`,
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-    },
-    body: JSON.stringify({
-      text_prompts: [{ text: payload.prompt }],
-      cfg_scale: 7,
-      height: 1024,
-      width: 1024,
-      samples: 1,
-      steps: 30,
-    }),
-  });
-
-  const result = await response.json();
-  if (result.message) throw new Error(result.message);
-
-  const base64 = result.artifacts?.[0]?.base64;
-  return new Response(
-    JSON.stringify({ result: `data:image/png;base64,${base64}` }),
-    { headers: { 'Content-Type': 'application/json' } }
-  );
-}
-
-/**
- * UPDATED: Hugging Face through router.huggingface.co (model-specific path)
- */
 async function handleHuggingFace(key: string, type: string, payload: any) {
   const model =
     type === 'image'
-      ? 'runwayml/stable-diffusion-v1-5'
+      ? 'stabilityai/stable-diffusion-xl-base-1.0'
       : 'mistralai/Mistral-7B-Instruct-v0.2';
 
-  // Model-specific router endpoint
-  const url = `https://router.huggingface.co/models/${model}`;
+  const url = `https://api-inference.huggingface.co/models/${model}`;
 
-  const isImage = type === 'image';
-
-  const response = await fetch(url, {
+  const res = await fetch(url, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${key}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(
-      isImage
-        ? { inputs: payload.prompt } // text-to-image style
-        : { inputs: payload.prompt } // text generation style
-    ),
+    body: JSON.stringify({ inputs: payload.prompt }),
   });
 
-  if (!response.ok) {
-    const errText = await response.text();
-    throw new Error(errText || `HF error: ${response.status}`);
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(err || 'Hugging Face inference failed');
   }
 
-  if (isImage) {
-    const blob = await response.blob();
+  if (type === 'image') {
+    const blob = await res.blob();
     const buffer = await blob.arrayBuffer();
-    const base64 = btoa(
-      new Uint8Array(buffer).reduce(
-        (data, byte) => data + String.fromCharCode(byte),
-        ''
-      )
-    );
-    return new Response(
-      JSON.stringify({ result: `data:image/png;base64,${base64}` }),
-      { headers: { 'Content-Type': 'application/json' } }
-    );
-  } else {
-    const result = await response.json();
-    const text = Array.isArray(result)
-      ? result[0]?.generated_text || JSON.stringify(result)
-      : result.generated_text || JSON.stringify(result);
-    return new Response(JSON.stringify({ result: text }), {
-      headers: { 'Content-Type': 'application/json' },
-    });
+    const base64 = Buffer.from(buffer).toString('base64');
+
+    return json({ result: `data:image/png;base64,${base64}` });
   }
+
+  const data = await res.json();
+  const text =
+    Array.isArray(data)
+      ? data[0]?.generated_text
+      : data.generated_text || JSON.stringify(data);
+
+  return json({ result: text });
 }
 
-async function handleDeepAI(key: string, type: string, payload: any) {
-  if (type === 'roadmap')
-    return await handleGeneric('DeepAI Text', key, type, payload);
+async function handleStability(key: string, type: string, payload: any) {
+  if (type !== 'image') {
+    throw new Error('Stability AI only supports image generation.');
+  }
 
-  const url = 'https://api.deepai.org/api/text2img';
-  // DeepAI uses simple api-key header
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'api-key': key },
-    body: new URLSearchParams({ text: payload.prompt }),
-  });
-
-  const result = await response.json();
-  if (result.err) throw new Error(result.err);
-  return new Response(JSON.stringify({ result: result.output_url }), {
-    headers: { 'Content-Type': 'application/json' },
-  });
-}
-
-async function handleNanoBanana(key: string, type: string, payload: any) {
-  // NanoBanana is often a proxy itself or a specific model host
-  const url = 'https://api.nanobanana.com/v1/generate';
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${key}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ prompt: payload.prompt, type }),
-  });
-  const result = await response.json();
-  return new Response(
-    JSON.stringify({ result: result.output || result.result }),
-    { headers: { 'Content-Type': 'application/json' } }
+  const res = await fetch(
+    'https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/text-to-image',
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${key}`,
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify({
+        text_prompts: [{ text: payload.prompt }],
+        cfg_scale: 7,
+        height: 1024,
+        width: 1024,
+        samples: 1,
+        steps: 30,
+      }),
+    }
   );
-}
 
-async function handleRunway(key: string, type: string, payload: any) {
-  return new Response(
-    JSON.stringify({
-      error:
-        'RunwayML requires a persistent socket/polling which is restricted in this edge environment. Please use OpenAI or Stability for real-time deconstruction.',
-    }),
-    { status: 501 }
-  );
-}
+  const data = await res.json();
 
-async function handleArtbreeder(key: string, type: string, payload: any) {
-  // Artbreeder often uses a specific collages/mixer API
-  return new Response(
-    JSON.stringify({
-      error:
-        'Artbreeder orchestration requires a valid mixer session. Please manifest utilizing the OpenAI or Stability engines for immediate deconstruction.',
-    }),
-    { status: 501 }
-  );
-}
+  if (!res.ok || data?.message) {
+    throw new Error(data?.message || 'Stability AI failed');
+  }
 
-async function handleMidjourney(key: string, type: string, payload: any) {
-  return new Response(
-    JSON.stringify({
-      error:
-        'Midjourney orchestration is strictly restricted to valid Discord-bound tokens. Please ensure your Registry credentials are valid or utilize the Gemini engine.',
-    }),
-    { status: 501 }
-  );
-}
-
-async function handleReplicate(key: string, type: string, payload: any) {
-  if (!key) throw new Error('Replicate API key required.');
-  // Replicate usually is async (start -> poll), so we'll warn about edge limits
-  return new Response(
-    JSON.stringify({
-      error:
-        'Replicate models require async polling not supported in this synchronous edge proxy. Please use Stability AI for immediate results.',
-    }),
-    { status: 501 }
-  );
-}
-
-async function handleGeneric(
-  provider: string,
-  key: string,
-  type: string,
-  payload: any
-) {
-  return new Response(
-    JSON.stringify({
-      error: `${provider} expansion in progress. This engine is currently restricted to textual synthesis.`,
-    }),
-    { status: 501 }
-  );
+  const base64 = data.artifacts?.[0]?.base64;
+  return json({ result: `data:image/png;base64,${base64}` });
 }
