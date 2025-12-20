@@ -2,6 +2,7 @@
   "name": "sketchai-professional-atelier",
   "private": true,
   "version": "10.0.0",
+  "homepage": "https://louismane.github.io/Sketch-Ai/",
   "type": "module",
   "scripts": {
     "dev": "vite",
