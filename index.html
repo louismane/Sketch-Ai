@@ -7,92 +7,129 @@
     content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
   />
 
-  <title>SketchAI | Apex Art Assistant</title>
+  <title>SketchAI | Apex Art Assistant v10.0</title>
   <meta
     name="description"
-    content="SketchAI Apex — a professional AI-assisted art learning and sketch deconstruction platform."
+    content="Atelier Art Assistant v10.0 'Apex' - A professional, educational art deconstruction platform."
   />
 
   <!-- Tailwind CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- Tailwind Config (FIXED) -->
+  <!-- Tailwind Config -->
   <script>
     tailwind.config = {
-      darkMode: "class",
+      darkMode: 'class',
       theme: {
         extend: {
           colors: {
             studio: {
-              DEFAULT: "#000000",
-              paper: "#ffffff",
-              zinc: "#121214",
-              border: "rgba(255, 255, 255, 0.08)",
-              accent: "#ffffff"
-            }
+              DEFAULT: '#000000',
+              paper: '#ffffff',
+              zinc: '#121214',
+              border: 'rgba(255, 255, 255, 0.08)',
+              accent: '#ffffff',
+            },
           },
           fontFamily: {
             sans: [
-              "Inter",
-              "-apple-system",
-              "BlinkMacSystemFont",
-              "Segoe UI",
-              "Roboto",
-              "sans-serif"
+              'Inter',
+              '-apple-system',
+              'BlinkMacSystemFont',
+              'Segoe UI',
+              'Roboto',
+              'sans-serif',
             ],
-            serif: ["Playfair Display", "serif"],
-            mono: ["JetBrains Mono", "monospace"]
+            serif: ['Playfair Display', 'serif'],
+            mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
           },
           animation: {
-            "fade-in": "fadeIn 0.4s ease-out forwards",
-            "float-slow": "float 20s ease-in-out infinite"
+            'float-slow': 'float 25s infinite ease-in-out',
+            'pulse-glow': 'pulseGlow 4s infinite ease-in-out',
+            'draw-in': 'drawIn 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards',
+            'glass-shine': 'glassShine 4s infinite',
+            'fade-in': 'fadeIn 0.4s ease-out forwards',
+            shimmer: 'shimmer 2s infinite linear',
           },
           keyframes: {
-            fadeIn: {
-              from: { opacity: "0", transform: "translateY(6px)" },
-              to: { opacity: "1", transform: "translateY(0)" }
-            },
             float: {
-              "0%, 100%": { transform: "translate(0, 0)" },
-              "50%": { transform: "translate(1%, 2%)" }
-            }
-          }
-        }
-      }
+              '0%, 100%': { transform: 'translate(0, 0) scale(1)' },
+              '50%': { transform: 'translate(1%, 2%) scale(1.02)' },
+            },
+            pulseGlow: {
+              '0%, 100%': { opacity: 0.1, transform: 'scale(1)' },
+              '50%': { opacity: 0.15, transform: 'scale(1.02)' },
+            },
+            drawIn: {
+              from: {
+                opacity: 0,
+                filter: 'blur(8px)',
+                transform: 'translateY(10px) scale(0.98)',
+              },
+              to: { opacity: 1, filter: 'blur(0)', transform: 'translateY(0) scale(1)' },
+            },
+            glassShine: {
+              '0%': { transform: 'translateX(-100%) skewX(-15deg)' },
+              '100%': { transform: 'translateX(200%) skewX(-15deg)' },
+            },
+            fadeIn: {
+              from: { opacity: 0, transform: 'translateY(5px)' },
+              to: { opacity: 1, transform: 'translateY(0)' },
+            },
+            shimmer: {
+              '0%': { transform: 'translateX(-100%)' },
+              '100%': { transform: 'translateX(100%)' },
+            },
+            scanBeam: {
+              '0%': { top: '0%' },
+              '100%': { top: '100%' },
+            },
+            pulseGlowGold: {
+              '0%, 100%': { boxShadow: '0 0 0 0 rgba(255, 215, 0, 0)', transform: 'scale(1)' },
+              '50%': { boxShadow: '0 0 20px 5px rgba(255, 215, 0, 0.4)', transform: 'scale(1.02)' },
+            },
+          },
+        },
+      },
     };
   </script>
 
   <!-- Fonts -->
   <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700&family=JetBrains+Mono:wght@400;700&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;1,700&family=JetBrains+Mono:wght@400;700&display=swap"
     rel="stylesheet"
   />
 
   <!-- Base Styles -->
   <style>
-    html,
-    body {
+    body,
+    html {
       margin: 0;
       padding: 0;
       min-height: 100vh;
-      background-color: #050505;
+      background-color: #040404;
+      background-image: radial-gradient(
+        circle at 50% 50%,
+        rgba(0, 0, 50, 0.05) 0%,
+        transparent 100%
+      );
       color: #f2f2f2;
-      font-family: Inter, system-ui, sans-serif;
       -webkit-font-smoothing: antialiased;
+      scroll-behavior: smooth;
       overflow-x: hidden;
     }
 
     body::after {
-      content: "";
+      content: '';
       position: fixed;
       inset: 0;
-      background-image: url("https://images.unsplash.com/photo-1513364776144-60967b0f800f");
+      background-image: url('https://images.unsplash.com/photo-1513364776144-60967b0f800f?q=80&w=2671&auto=format&fit=crop');
       background-size: cover;
       background-position: center;
       opacity: 0.03;
-      filter: grayscale(100%) contrast(140%);
       pointer-events: none;
       z-index: -1;
+      filter: grayscale(100%) contrast(150%);
     }
 
     #root {
@@ -101,47 +138,70 @@
       flex-direction: column;
     }
 
-    .glass {
-      background: rgba(20, 20, 20, 0.45);
-      backdrop-filter: blur(24px) saturate(160%);
-      border: 1px solid rgba(255, 255, 255, 0.06);
+    .advanced-glass {
+      background: rgba(16, 16, 16, 0.35);
+      backdrop-filter: blur(30px) saturate(180%);
+      -webkit-backdrop-filter: blur(30px) saturate(180%);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    .noise {
+    .advanced-glass:hover {
+      background: rgba(22, 22, 22, 0.45);
+      border-color: rgba(255, 255, 255, 0.12);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+      transform: translateY(-4px);
+    }
+
+    .glass-movement {
+      transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.6s ease;
+    }
+
+    .noise-grain {
       position: fixed;
-      inset: 0;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0.03;
       pointer-events: none;
-      opacity: 0.025;
       z-index: 9999;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+
+    .fine-art-paper {
+      background: #fafafa;
+      position: relative;
+      overflow: hidden;
+      box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.03),
+        0 30px 60px -15px rgba(0, 0, 0, 0.6);
+    }
+
+    .fine-art-paper::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: url('https://www.transparenttextures.com/patterns/natural-paper.png');
+      opacity: 0.2;
+      pointer-events: none;
+      mix-blend-mode: multiply;
+    }
+
+    .studio-scroll::-webkit-scrollbar {
+      width: 3px;
+    }
+
+    .studio-scroll::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 10px;
     }
   </style>
 </head>
-
 <body>
-  <div class="noise"></div>
+  <div class="noise-grain"></div>
 
-  <!-- App Root -->
-  <div id="root" class="animate-fade-in"></div>
+  <div id="root"></div>
 
-  <!-- IMPORTANT -->
-  <!-- GitHub Pages DOES NOT SUPPORT /src/main.tsx -->
-  <!-- This MUST be bundled (Vite build) OR removed -->
-
-  <!-- TEMP SAFE PLACEHOLDER -->
-  <script>
-    document.getElementById("root").innerHTML = `
-      <main class="min-h-screen flex items-center justify-center">
-        <div class="glass rounded-2xl p-10 max-w-xl text-center">
-          <h1 class="text-3xl font-semibold mb-4">SketchAI Apex</h1>
-          <p class="opacity-70">
-            Frontend loaded correctly.
-            <br />
-            Waiting for bundled app build.
-          </p>
-        </div>
-      </main>
-    `;
-  </script>
+  <script type="module" src="/src/main.tsx"></script>
 </body>
 </html>
