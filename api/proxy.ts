@@ -10,7 +10,10 @@ export const config = {
 
 export default async function handler(req: Request) {
   if (req.method !== 'POST') {
-    return new Response('Method Not Allowed', { status: 405 });
+    return json(
+      { error: 'Method Not Allowed' },
+      405
+    );
   }
 
   try {
@@ -88,7 +91,12 @@ async function safe(fn: () => Promise<Response>, provider: string) {
 function json(body: any, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*', // adjust for your domain in production
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
   });
 }
 
@@ -107,7 +115,10 @@ async function handleGemini(key: string, type: string, payload: any) {
 
   const res = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'User-Agent': 'SketchAI-Proxy/1.0',
+    },
     body: JSON.stringify({
       contents: [
         {
@@ -155,6 +166,7 @@ async function handleOpenAI(key: string, type: string, payload: any) {
     headers: {
       Authorization: `Bearer ${key}`,
       'Content-Type': 'application/json',
+      'User-Agent': 'SketchAI-Proxy/1.0',
     },
     body: JSON.stringify(body),
   });
@@ -178,7 +190,6 @@ async function handleHuggingFace(key: string, type: string, payload: any) {
       ? 'stabilityai/stable-diffusion-xl-base-1.0'
       : 'mistralai/Mistral-7B-Instruct-v0.2';
 
-  // Use router with model-specific path
   const url = `https://router.huggingface.co/models/${model}`;
 
   const res = await fetch(url, {
@@ -186,6 +197,7 @@ async function handleHuggingFace(key: string, type: string, payload: any) {
     headers: {
       Authorization: `Bearer ${key}`,
       'Content-Type': 'application/json',
+      'User-Agent': 'SketchAI-Proxy/1.0',
     },
     body: JSON.stringify({ inputs: payload.prompt }),
   });
@@ -198,7 +210,6 @@ async function handleHuggingFace(key: string, type: string, payload: any) {
   if (type === 'image') {
     const blob = await res.blob();
     const buffer = await blob.arrayBuffer();
-    // Edge runtime: use Uint8Array + btoa, not Node Buffer
     const base64 = btoa(
       new Uint8Array(buffer).reduce(
         (data, byte) => data + String.fromCharCode(byte),
@@ -231,6 +242,7 @@ async function handleStability(key: string, type: string, payload: any) {
         Authorization: `Bearer ${key}`,
         'Content-Type': 'application/json',
         Accept: 'application/json',
+        'User-Agent': 'SketchAI-Proxy/1.0',
       },
       body: JSON.stringify({
         text_prompts: [{ text: payload.prompt }],
