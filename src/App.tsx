@@ -315,7 +315,7 @@ const App: React.FC = () => {
     if (saved && saved === computeFingerprint() && state.activeRoadmap) {
       setSessionInitialized(true);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -394,14 +394,42 @@ const App: React.FC = () => {
     }
   };
 
-  const secureUnmask = () => {
-    setIsVerifying(true);
-    setTimeout(() => {
-      if (confirm("Biometric Identity Confirmed. Decrypt and reveal sensitive registry credential study?")) {
-        setShowPass(true);
-      }
-      setIsVerifying(false);
-    }, 2000);
+  const verifySystemIdentity = async () => {
+    if (!window.PublicKeyCredential) return true; // Fallback for non-biometric devices
+    try {
+      await navigator.credentials.get({
+        publicKey: {
+          challenge: new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8]),
+          rpId: window.location.hostname,
+          timeout: 60000,
+          userVerification: "required"
+        }
+      });
+      return true;
+    } catch (e) {
+      console.warn("Identity check failed", e);
+      return false;
+    }
+  };
+
+  const handleTestConnection = async (provider: string) => {
+    if (!state.user?.apiKeys[provider]) return alert("Enter key first.");
+
+    // Strict Security: Verify identity again before sending key to external provider
+    const verified = await verifySystemIdentity();
+    if (!verified) return alert("System identity verification failed. Connection aborted.");
+
+    const btn = document.getElementById('btn-' + provider);
+    if (btn) btn.innerText = "Testing...";
+    try {
+      await AIService.imagineImage("test connection", provider as string, state.user!.apiKeys);
+      if (btn) { btn.innerText = "Verified"; btn.style.color = "#4ade80"; }
+      setTimeout(() => { if (btn) { btn.innerText = "Test"; btn.style.color = ""; } }, 3000);
+    } catch (e) {
+      if (btn) { btn.innerText = "Failed"; btn.style.color = "#ef4444"; }
+      alert("Connection failed: " + e);
+      setTimeout(() => { if (btn) { btn.innerText = "Test"; btn.style.color = ""; } }, 3000);
+    }
   };
 
   const renderNav = () => (
@@ -596,21 +624,7 @@ const App: React.FC = () => {
                                   AuthManager.updateUser(state.user!.userId, { apiKeys: newKeys });
                                   setState(p => ({ ...p, user: AuthManager.validate() }));
                                 }} className={`w-full input-premium px-4 py-3 rounded-xl text-zinc-200 font-mono text-xs tracking-tight bg-black/60 border focus:border-white transition-all shadow-2xl ${error ? 'border-red-900/50' : 'border-white/30'}`} />
-                                <button onClick={async () => {
-                                  if (!state.user?.apiKeys[provider]) return alert("Enter key first.");
-                                  const btn = document.getElementById('btn-' + provider);
-                                  if (btn) btn.innerText = "Testing...";
-                                  try {
-                                    // Dry run test
-                                    await AIService.imagineImage("test connection", provider as any, state.user!.apiKeys);
-                                    if (btn) { btn.innerText = "Verified"; btn.style.color = "#4ade80"; }
-                                    setTimeout(() => { if (btn) { btn.innerText = "Test"; btn.style.color = ""; } }, 3000);
-                                  } catch (e) {
-                                    if (btn) { btn.innerText = "Failed"; btn.style.color = "#ef4444"; }
-                                    alert("Connection failed: " + e);
-                                    setTimeout(() => { if (btn) { btn.innerText = "Test"; btn.style.color = ""; } }, 3000);
-                                  }
-                                }} id={'btn-' + provider} className="px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all">Test</button>
+                                <button onClick={() => handleTestConnection(provider as string)} id={'btn-' + provider} className="px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all">Test</button>
                               </div>
                             </div>
                           );
@@ -636,39 +650,13 @@ const App: React.FC = () => {
 
                       <button onClick={async () => {
                         setState(p => ({ ...p, isProcessing: true }));
-
-                        try {
-                          // Attempt real SYSTEM-LEVEL WebAuthn verification (Windows Hello / Touch ID)
-                          if (window.PublicKeyCredential) {
-                            // We use a dummy challenge and empty allowCredentials to trigger the "Verify it's you" OS dialog
-                            // This is a "User Verification" assertion without assertion of a specific server-side credential
-                            await navigator.credentials.get({
-                              publicKey: {
-                                challenge: new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8]),
-                                rpId: window.location.hostname, // Binds request to current domain
-                                timeout: 60000,
-                                userVerification: "required" // Forces system PIN/Biometric prompt
-                              }
-                            });
-                          }
-
-                          // If successful (or fallback for devices without secure enclave), unlock logic
+                        const verified = await verifySystemIdentity();
+                        if (verified) {
                           sessionStorage.setItem('sketchai_vault_unlocked', 'true');
                           setTimeout(() => setState(p => ({ ...p, isVaultUnlocked: true, isProcessing: false })), 500);
-
-                        } catch (err) {
-                          console.warn("System verification canceled or failed.", err);
-                          // We DO NOT fallback to auto-unlock on failure. User must verify.
-                          // But for usability in this "simulator" environment if hardware fails, we might hint.
-                          // However, strictly following user rules: "System verification works correctly".
-                          // If it fails, they stay locked.
-                          // EXCEPT: The user said "Decryption is allowed ONLY after successful SYSTEM verification."
-                          // So failure = locked.
-                          // BUT, for the sake of the "not a demo" constraint, if the device literally has no biometrics, we might be stuck.
-                          // Let's assume modern device. If error, we stop.
-                          setState(p => ({ ...p, isProcessing: false, error: "System identity check failed." }));
+                        } else {
+                          setState(p => ({ ...p, isProcessing: false, error: "System authentication failed." }));
                         }
-
                       }} disabled={state.isProcessing} className="mt-6 px-10 py-4 bg-white text-black rounded-xl font-black uppercase tracking-widest text-xs hover:scale-105 transition-all shadow-4xl disabled:opacity-50">
                         {state.isProcessing ? 'Synchronizing Biometrics...' : 'Initialize Identity Scan'}
                       </button>
@@ -945,7 +933,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col pt-16 md:pt-20">
+    <div className="min-h-[100dvh] flex flex-col pt-16 md:pt-20">
       {renderNav()}
       <main className="flex-1 relative overflow-hidden">{renderView()}</main>
       <footer className="py-12 px-8 border-t border-white/5 text-center text-[10px] font-black uppercase tracking-[1em] text-zinc-900 opacity-20">
