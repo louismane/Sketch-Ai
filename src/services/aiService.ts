@@ -1,39 +1,94 @@
 import { AIProvider, ArtMedium, ArtRoadmap, SkillLevel } from "../types";
-import { APIManager } from "./apiManager";
 
 export interface AIServiceResponse {
-    roadmap?: ArtRoadmap;
-    image?: string;
-    error?: string;
+  roadmap?: ArtRoadmap;
+  image?: string;
+  error?: string;
 }
 
 export class AIService {
-    static async generateRoadmap(
-        userId: string,
-        imageData: string,
-        medium: ArtMedium,
-        skill: SkillLevel,
-        provider: AIProvider,
-        apiKeys: Record<string, string>
-    ): Promise<ArtRoadmap> {
-        // Extract the specific key for the requested provider
-        const apiKey = apiKeys[provider] || '';
-        if (!apiKey) console.warn(`No API key found for ${provider}, proceeding with potential falback/error.`);
-
-        return await APIManager.generateRoadmap(provider, {
-            image: imageData,
-            medium,
-            skill,
-            userId
-        }, apiKey);
+  static async generateRoadmap(
+    userId: string,
+    imageData: string,
+    medium: ArtMedium,
+    skill: SkillLevel,
+    provider: AIProvider,
+    apiKeys: Record<string, string>
+  ): Promise<ArtRoadmap> {
+    const apiKey = apiKeys[provider] || '';
+    
+    if (!apiKey) {
+      throw new Error(`No API key found for ${provider}. Please add one in Settings.`);
     }
 
-    static async imagineImage(
-        prompt: string,
-        provider: AIProvider,
-        apiKeys: Record<string, string>
-    ): Promise<string> {
-        const apiKey = apiKeys[provider] || '';
-        return await APIManager.imagineImage(provider, prompt, apiKey);
+    // Use /api/proxy for all providers
+    const response = await fetch('/api/proxy', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        provider: provider,
+        type: 'roadmap',
+        apiKey: apiKey,
+        payload: {
+          prompt: `Create a detailed art instruction roadmap for a ${skill} artist learning ${medium} from this image: ${imageData}`,
+          image: imageData,
+          medium,
+          skill,
+          userId
+        }
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || data.error) {
+      throw new Error(data.error || `${provider} roadmap generation failed`);
     }
+
+    // Parse response
+    try {
+      return JSON.parse(data.result);
+    } catch {
+      // Fallback if result isn't JSON
+      return {
+        id: userId,
+        medium,
+        skillLevel: skill,
+        steps: [],
+        createdAt: new Date().toISOString()
+      } as ArtRoadmap;
+    }
+  }
+
+  static async imagineImage(
+    prompt: string,
+    provider: AIProvider,
+    apiKeys: Record<string, string>
+  ): Promise<string> {
+    const apiKey = apiKeys[provider] || '';
+    
+    if (!apiKey) {
+      throw new Error(`No API key found for ${provider}. Please add one in Settings.`);
+    }
+
+    // Use /api/proxy for all providers
+    const response = await fetch('/api/proxy', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        provider: provider,
+        type: 'image',
+        apiKey: apiKey,
+        payload: { prompt }
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || data.error) {
+      throw new Error(data.error || `${provider} image generation failed`);
+    }
+
+    return data.result;
+  }
 }
