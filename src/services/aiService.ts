@@ -32,16 +32,16 @@ export class AIService {
         type: 'roadmap',
         apiKey,
         payload: {
-          prompt: `Create a detailed art instruction roadmap for a ${skill} artist learning ${medium} from this image: ${imageData}`,
-          image: imageData,
-          medium,
-          skill,
-          userId
+          // Only send prompt text; keep large data local to prevent 413.
+          prompt: `Create a detailed art instruction roadmap for a ${skill} artist learning ${medium}. The subject reference is stored locally in the browser (not uploaded).`
         }
       })
     });
 
-    const data = await response.json();
+    // Read as text and safely parse to avoid Unexpected token JSON errors
+    const raw1 = await response.text();
+    let data: any = {};
+    try { data = raw1 ? JSON.parse(raw1) : {}; } catch { data = { error: 'Invalid JSON response from proxy', raw: raw1 }; }
 
     if (!response.ok || data.error) {
       throw new Error(data.error ?? `${provider} roadmap generation failed`);
@@ -86,7 +86,9 @@ export class AIService {
       })
     });
 
-    const data = await response.json();
+    const raw2 = await response.text();
+    let data: any = {};
+    try { data = raw2 ? JSON.parse(raw2) : {}; } catch { data = { error: 'Invalid JSON response from proxy', raw: raw2 }; }
 
     if (!response.ok || data.error) {
       throw new Error(data.error ?? `${provider} image generation failed`);
