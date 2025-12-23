@@ -3,8 +3,8 @@ export const config = {
 };
 
 /**
- * Atelier Apex Orchestration Proxy
- * Stable, multi-provider AI routing layer
+ * Atelier Apex Orchestration Proxy - 2025
+ * Multi-provider AI routing with demo/test mode support
  * Compatible with Vercel Edge Runtime
  */
 
@@ -34,14 +34,17 @@ export default async function handler(req: Request) {
 
     let { provider, apiKey, type, payload } = body;
 
-    // Normalize provider names (defensive, in case frontend sends lowercase)
+    // Normalize provider names
     if (provider === 'gemini') provider = 'Gemini';
     if (provider === 'openai') provider = 'OpenAI';
     if (provider === 'huggingface') provider = 'Hugging Face';
     if (provider === 'stability') provider = 'Stability AI';
 
-    // Auto-inject API keys from env if not provided in the body
-    if (!apiKey) {
+    // Check for demo mode (for testing without real keys)
+    const DEMO_MODE = process.env.DEMO_MODE === 'true' || process.env.VITE_DEMO_MODE === 'true';
+
+    // Auto-inject API keys from env
+    if (!apiKey && !DEMO_MODE) {
       switch (provider) {
         case 'Gemini':
         case 'GeminiListModels':
@@ -71,15 +74,26 @@ export default async function handler(req: Request) {
       }
     }
 
+    // In DEMO_MODE, provide placeholder key to pass validation
+    if (DEMO_MODE && !apiKey) {
+      apiKey = 'DEMO_MODE_KEY';
+    }
+
     if (!provider || !type || !payload?.prompt || !apiKey) {
       return json(
         {
           error:
-            'Missing provider, API key, request type, or prompt (check env variables).',
+            'Missing provider, API key, request type, or prompt.',
+          details: DEMO_MODE ? 'Demo mode enabled' : 'Check environment variables',
           status: 'invalid_request',
         },
         400
       );
+    }
+
+    // In DEMO_MODE, return mock responses for testing
+    if (DEMO_MODE) {
+      return await demoHandler(provider, type, payload);
     }
 
     switch (provider) {
@@ -114,6 +128,7 @@ export default async function handler(req: Request) {
         );
     }
   } catch (err: any) {
+    console.error('[Proxy Fatal Error]', err);
     return json(
       {
         error: 'Proxy fatal error.',
@@ -125,12 +140,29 @@ export default async function handler(req: Request) {
   }
 }
 
+/** Demo/Test mode response handler */
+async function demoHandler(provider: string, type: string, payload: any) {
+  // Generate realistic mock responses
+  const prompt = payload.prompt || '';
+  const mockResponses: {[key: string]: string} = {
+    roadmap: 'Generated learning roadmap: Foundation → Intermediate → Advanced → Mastery',
+    synthesis: 'Synthesized art direction with contemporary design principles',
+    analysis: 'Visual analysis complete. Technical composition identified.',
+    image: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="256" height="256"%3E%3Crect width="256" height="256" fill="%234a5568"/%3E%3Ccircle cx="128" cy="128" r="64" fill="%2363b3f5"/%3E%3C/svg%3E',
+    default: `Processed: ${prompt.substring(0, 50)}... [${provider} | ${type}]`,
+  };
+
+  const result = mockResponses[type] || mockResponses.default;
+  return json({ result, mode: 'DEMO', provider, timestamp: new Date().toISOString() });
+}
+
 /* Utility Helpers */
 
 async function safe(fn: () => Promise<Response>, provider: string) {
   try {
     return await fn();
   } catch (err: any) {
+    console.error(`[${provider} Error]`, err?.message);
     return json(
       {
         error: `Interference detected in ${provider} sub-link.`,
@@ -154,8 +186,6 @@ function json(body: any, status = 200) {
   });
 }
 
-/* Base64 helper function */
-
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer);
   let binary = '';
@@ -167,13 +197,12 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
 
 /* Providers */
 
-/** Gemini AI - Google Generative Language API (latest 2025) */
+/** Gemini AI - Google Generative Language API (2025) */
 async function handleGemini(key: string, type: string, payload: any) {
-  // Updated model names per 2025 latest API
   const model =
     type === 'roadmap'
-      ? 'models/gemini-pro-latest'       // Pro roadmap model
-      : 'models/gemini-flash-latest';    // General chat model
+      ? 'models/gemini-pro-latest'
+      : 'models/gemini-flash-latest';
 
   const url = `https://generativelanguage.googleapis.com/v1beta/${model}:generateContent?key=${key}`;
 
@@ -196,7 +225,7 @@ async function handleGemini(key: string, type: string, payload: any) {
   const data = await res.json();
 
   if (!res.ok) {
-    throw new Error(data?.error?.message || 'Gemini request failed');
+    throw new Error(data?.error?.message || `Gemini API error: ${res.status}`);
   }
 
   const text =
@@ -226,7 +255,7 @@ async function listGeminiModels(key: string) {
   return json({ models: data.models });
 }
 
-/** OpenAI - Latest recommended 2025 usage */
+/** OpenAI - Latest 2025 models */
 async function handleOpenAI(key: string, type: string, payload: any) {
   const isImage = type === 'image';
 
@@ -234,7 +263,6 @@ async function handleOpenAI(key: string, type: string, payload: any) {
     ? 'https://api.openai.com/v1/images/generations'
     : 'https://api.openai.com/v1/chat/completions';
 
-  // Use GPT-4o if available, fallback to GPT-4o-mini (mini is smaller and faster)
   const chatModel = 'gpt-4o';
 
   const body = isImage
@@ -261,7 +289,7 @@ async function handleOpenAI(key: string, type: string, payload: any) {
   const data = await res.json();
 
   if (!res.ok) {
-    throw new Error(data?.error?.message || 'OpenAI request failed');
+    throw new Error(data?.error?.message || `OpenAI API error: ${res.status}`);
   }
 
   const output = isImage
@@ -271,13 +299,12 @@ async function handleOpenAI(key: string, type: string, payload: any) {
   return json({ result: output });
 }
 
-/** Hugging Face - Updated 2025 models and API */
+/** Hugging Face - 2025 models */
 async function handleHuggingFace(key: string, type: string, payload: any) {
-  // Use popular 2025 models for text and image generation
   const model =
     type === 'image'
-      ? 'stabilityai/stable-diffusion-xl-base-1.0' // Stable Diffusion XL v1.0 for images
-      : 'tiiuae/falcon-40b-instruct';             // Falcon 40B Instruct for text
+      ? 'stabilityai/stable-diffusion-xl-base-1.0'
+      : 'tiiuae/falcon-40b-instruct';
 
   const url = `https://api-inference.huggingface.co/models/${model}`;
 
@@ -293,7 +320,7 @@ async function handleHuggingFace(key: string, type: string, payload: any) {
 
   if (!res.ok) {
     const err = await res.text();
-    throw new Error(err || 'Hugging Face inference failed');
+    throw new Error(err || `Hugging Face error: ${res.status}`);
   }
 
   if (type === 'image') {
@@ -305,8 +332,6 @@ async function handleHuggingFace(key: string, type: string, payload: any) {
   }
 
   const data = await res.json();
-
-  // Falcon 40B returns generated_text in an array or object
   const text =
     Array.isArray(data)
       ? data[0]?.generated_text
@@ -315,7 +340,7 @@ async function handleHuggingFace(key: string, type: string, payload: any) {
   return json({ result: text });
 }
 
-/** Stability AI - Latest v2025 stable diffusion endpoint */
+/** Stability AI - Latest 2025 models */
 async function handleStability(key: string, type: string, payload: any) {
   if (type !== 'image') {
     throw new Error('Stability AI only supports image generation.');
@@ -345,7 +370,7 @@ async function handleStability(key: string, type: string, payload: any) {
   const data = await res.json();
 
   if (!res.ok || data?.message) {
-    throw new Error(data?.message || 'Stability AI failed');
+    throw new Error(data?.message || `Stability AI error: ${res.status}`);
   }
 
   const base64 = data.artifacts?.[0]?.base64;
