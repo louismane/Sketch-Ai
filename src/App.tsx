@@ -312,20 +312,21 @@ const App: React.FC = () => {
   useEffect(() => {
     const saved = localStorage.getItem('sketchai_session_fp') || '';
     setSessionFingerprint(saved);
-    if (saved && saved === computeFingerprint() && state.activeRoadmap) {
+        // Only auto-initialize if explicitly enabled AND we have a roadmap already loaded
+    if (saved && state.activeRoadmap) {
       setSessionInitialized(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+    // ONLY run once on mount
   useEffect(() => {
     const current = computeFingerprint();
-    if (sessionFingerprint && sessionFingerprint !== current) {
-      setSessionInitialized(false);
-      localStorage.removeItem('sketchai_session_fp');
+    // Only reset if user explicitly changed provider/key, NOT on every render
+    if (sessionFingerprint && sessionFingerprint !== current && state.view === 'studio') {oveItem('sketchai_session_fp');
       setSessionFingerprint('');
     }
-  }, [computeFingerprint, sessionFingerprint]);
+  }, [computeFingerprint, state.view]);
 
   const resetSession = () => {
     setSessionInitialized(false);
@@ -336,9 +337,19 @@ const App: React.FC = () => {
 
   const handleSynthesis = async () => {
     if (sessionInitialized) return;
-    if (!state.user) return;
-    const hasOwnKey = state.user.apiKeys[state.preferredProvider];
-
+    // CRITICAL: Guard against re-entry and already-initialized sessions
+    if (sessionInitialized) {
+      console.log('Session already initialized, skipping synthesis');
+      return;
+    }
+    if (state.isProcessing) {
+      console.log('Already processing, preventing duplicate request');
+      return;
+    }
+    if (!state.user) {
+      setState(p => ({ ...p, error: 'User session not found' }));
+      return;
+    }
     if (!hasOwnKey && state.user.dailyCount >= DAILY_LIMIT) {
       navigateTo('limit');
       return;
