@@ -336,6 +336,7 @@ const App: React.FC = () => {
   };
 
   const handleSynthesis = async () => {
+     const hasOwnKey = !!(state.user?.apiKeys?.[state.preferredProvider]);
     if (sessionInitialized) return;
     // CRITICAL: Guard against re-entry and already-initialized sessions
     if (sessionInitialized) {
